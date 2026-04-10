@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            {% if producto.imagen %}
+                <img src="{{ producto.imagen.url }}" class="img-fluid rounded-4 shadow-sm w-100" style="max-height: 500px; object-fit: cover;">
+            {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center rounded-4" style="height: 400px;">
+                    <i class="bi bi-camera text-muted" style="font-size: 4rem;"></i>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <h1 class="fw-bold mb-2">{{ producto.nombre }}</h1>
+            <span class="badge bg-light text-secondary border mb-3">{{ producto.categoria }}</span>
+            <h2 class="text-success fw-bold mb-4">${{ producto.precio }}</h2>
+            
+            <form action="{% url 'agregar' producto.id %}" method="POST" class="mb-5">
+                {% csrf_token %}
+                <div class="d-flex align-items-center gap-3 mb-3" style="max-width: 250px;">
+                    <label class="fw-bold">Cantidad:</label>
+                    <input type="number" name="cantidad" class="form-control text-center fw-bold" value="1" min="1" max="{{ producto.stock }}">
+                </div>
+                <button type="submit" class="btn btn-brand btn-lg text-white w-100 shadow-sm" {% if producto.stock == 0 %}disabled{% endif %}>
+                    <i class="bi bi-cart-plus me-2"></i> Agregar al Carrito
+                </button>
+            </form>
+
+            <hr>
+
+            <h4 class="fw-bold mt-4 mb-3">Reseñas de Clientes</h4>
+            {% for r in resenas %}
+                <div class="card border-0 bg-light mb-3" style="border-radius: 12px;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong class="text-dark">{{ r.nombre_cliente }}</strong>
+                            <div class="text-warning">
+                                {% for i in "12345" %}
+                                    <i class="bi bi-star{% if forloop.counter <= r.estrellas %}-fill{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="mb-0 text-muted small">"{{ r.comentario }}"</p>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">Aún no hay reseñas. ¡Sé el primero en opinar!</p>
+            {% endfor %}
+
+            <div class="card border-0 shadow-sm mt-4" style="border-radius: 15px; background-color: #fff9f0;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Deja tu opinión</h5>
+                    <form action="{% url 'dejar_resena' producto.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <input type="text" name="nombre" class="form-control" placeholder="Tu Nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <select name="estrellas" class="form-select" required>
+                                <option value="5">5 Estrellas (Excelente)</option>
+                                <option value="4">4 Estrellas</option>
+                                <option value="3">3 Estrellas</option>
+                                <option value="2">2 Estrellas</option>
+                                <option value="1">1 Estrella</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="comentario" class="form-control" rows="3" placeholder="¿Qué te pareció el producto?" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 fw-bold">Enviar Reseña</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

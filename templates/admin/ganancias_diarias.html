@@ -44,10 +44,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Recibimos los datos desde Python (Django)
         const fechas = JSON.parse('{{ fechas_json|safe }}');
         const totales = JSON.parse('{{ totales_json|safe }}');
-
         const ctx = document.getElementById('graficoVentas').getContext('2d');
         
         new Chart(ctx, {
@@ -57,7 +55,7 @@
                 datasets: [{
                     label: 'Ingresos Diarios ($)',
                     data: totales,
-                    borderColor: '#f39c12', // Color naranja panadería
+                    borderColor: '#f39c12', 
                     backgroundColor: 'rgba(243, 156, 18, 0.1)',
                     borderWidth: 3,
                     pointBackgroundColor: '#fff',
@@ -65,18 +63,18 @@
                     pointBorderWidth: 2,
                     pointRadius: 5,
                     fill: true,
-                    tension: 0.4 // Hace que la línea sea curva y moderna
+                    tension: 0.4 
                 }]
             },
             options: {
                 responsive: true,
                 plugins: {
-                    legend: { display: false } // Ocultamos la leyenda para que sea más limpio
+                    legend: { display: false } 
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { borderDash: [5, 5] } // Líneas punteadas de fondo
+                        grid: { borderDash: [5, 5] } 
                     },
                     x: {
                         grid: { display: false }

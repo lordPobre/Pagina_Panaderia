@@ -32,6 +32,28 @@
             </div>
         </div>
 
+        {% if productos_comprados %}
+        <div style="padding: 20px 30px; background-color: #fff9f0; border-radius: 12px; margin: 0 40px 30px; text-align: center; border: 1px dashed #f39c12;">
+            <h4 style="color: #2c3e50; margin: 0 0 10px 0; font-size: 16px;">¿Qué te pareció tu pedido? ⭐</h4>
+            <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 15px;">Tu opinión nos ayuda a seguir mejorando la tradición de La Jovita.</p>
+            
+            <table width="100%" cellpadding="0" cellspacing="0">
+                {% for p in productos_comprados %}
+                <tr>
+                    <td style="padding: 8px 0; text-align: left; font-size: 14px; color: #2c3e50; border-bottom: 1px solid #fce8cd;">
+                        <strong>{{ p.nombre }}</strong>
+                    </td>
+                    <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #fce8cd;">
+                        <a href="{{ dominio }}{% url 'producto_detalle' p.id %}" 
+                           style="background-color: #f39c12; color: #ffffff; padding: 6px 12px; text-decoration: none; border-radius: 6px; font-size: 12px; font-weight: bold; display: inline-block;">
+                            Dejar Reseña
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
         <div style="background-color: #2c3e50; color: #ffffff; padding: 30px 40px; margin: 10px 40px 40px; border-radius: 12px;">
             <h4 style="margin: 0 0 20px 0; color: #f39c12; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Información de Entrega</h4>
 

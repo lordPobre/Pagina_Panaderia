@@ -49,26 +49,21 @@ class Orden(models.Model):
         descontar_stock = False
 
         if self.pk:
-            # Si la orden YA existía, revisamos si acaba de ser pagada
             vieja_orden = Orden.objects.get(pk=self.pk)
             if not vieja_orden.pagado and self.pagado:
                 descontar_stock = True
         else:
-            # Si la orden es NUEVA y viene pagada de inmediato (MercadoPago)
             if self.pagado:
                 descontar_stock = True
 
-        # Guardamos la orden normalmente
         super().save(*args, **kwargs)
 
-        # Si se confirmó el pago, descontamos el stock de la base de datos
         if descontar_stock and self.carrito_data:
-            from .models import Producto # Importación local
+            from .models import Producto 
             for p_id, cantidad in self.carrito_data.items():
                 try:
                     producto = Producto.objects.get(id=int(p_id))
                     producto.stock -= cantidad
-                    # Evitamos que el stock quede en números negativos
                     if producto.stock < 0:
                         producto.stock = 0
                     producto.save()
@@ -77,6 +72,21 @@ class Orden(models.Model):
 
     def __str__(self):
         return f"Orden #{self.id} - {self.nombre} {self.apellido}"
+
+# core/models.py
+class Resena(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='resenas')
+    nombre_cliente = models.CharField(max_length=100, verbose_name="Tu Nombre")
+    comentario = models.TextField(verbose_name="Tu Comentario")
+    estrellas = models.IntegerField(default=5, choices=[(i, i) for i in range(1, 6)], verbose_name="Calificación")
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Reseña"
+        verbose_name_plural = "Reseñas"
+
+    def __str__(self):
+        return f"{self.nombre_cliente} sobre {self.producto.nombre}"
 
 class GananciaDiaria(Orden):
     class Meta:

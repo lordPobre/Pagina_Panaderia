@@ -1,9 +1,12 @@
+import csv
+from urllib.parse import quote
+from django.http import HttpResponse
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Sum, Count
-from django.db.models.functions import TruncDate,TruncMonth
+from django.db.models.functions import TruncDate, TruncMonth
 import json
-from .models import Producto,Orden,GananciaDiaria,GananciaMensual
+from .models import Producto, Orden, GananciaDiaria, GananciaMensual,Resena
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
@@ -14,7 +17,7 @@ class ProductoAdmin(admin.ModelAdmin):
 
 @admin.register(Orden)
 class OrdenAdmin(admin.ModelAdmin):
-    list_display = ('id_con_estilo', 'fecha', 'cliente_info', 'metodo_entrega', 'entrega_detalle', 'pago_status', 'total_formateado')
+    list_display = ('id_con_estilo', 'fecha', 'cliente_info', 'metodo_entrega', 'entrega_detalle', 'pago_status', 'total_formateado', 'contactar_whatsapp')
     list_filter = ('entregado', 'pagado', 'metodo_entrega', 'fecha', 'metodo_pago')
     search_fields = ('nombre', 'apellido', 'email', 'telefono')
     fieldsets = (
@@ -69,8 +72,7 @@ class OrdenAdmin(admin.ModelAdmin):
     def total_formateado(self, obj):
         return f"${obj.total:,}".replace(",", ".")
     total_formateado.short_description = "Total"
-
-    actions = ['marcar_como_pagado', 'marcar_como_entregado']
+    actions = ['marcar_como_pagado', 'marcar_como_entregado', 'exportar_a_csv']
 
     def marcar_como_pagado(self, request, queryset):
         contador = 0
@@ -86,6 +88,54 @@ class OrdenAdmin(admin.ModelAdmin):
     def marcar_como_entregado(self, request, queryset):
         queryset.update(entregado=True)
     marcar_como_entregado.short_description = "Marcar seleccionados como ENTREGADOS"
+
+    def contactar_whatsapp(self, obj):
+        telefono_limpio = str(obj.telefono).replace(" ", "").replace("+", "")
+
+        if not telefono_limpio.startswith("56"):
+            telefono_limpio = "56" + telefono_limpio
+
+        mensaje = f"Hola {obj.nombre}, te escribimos de Panadería La Jovita 🥖. ¡Tu pedido #{obj.id} ya está listo para ser retirado en el local!"
+        mensaje_codificado = quote(mensaje)
+        
+        url = f"https://wa.me/{telefono_limpio}?text={mensaje_codificado}"
+
+        return format_html(
+            '<a class="btn btn-sm text-white shadow-sm" href="{}" target="_blank" style="background-color: #25D366; border-radius: 20px;">'
+            '<i class="fab fa-whatsapp me-1"></i> Avisar'
+            '</a>',
+            url
+        )
+    contactar_whatsapp.short_description = "Aviso"
+
+    def exportar_a_csv(self, request, queryset):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="reporte_ventas.csv"'
+        response.write(u'\ufeff'.encode('utf8')) 
+
+        writer = csv.writer(response, delimiter=';') 
+        writer.writerow(['ID Orden', 'Fecha', 'Cliente', 'Email', 'Teléfono', 'Método', 'Total Pagado', 'Estado', 'Entregado', 'Productos'])
+
+        for orden in queryset:
+            fecha_str = orden.fecha.strftime("%d/%m/%Y %H:%M")
+            estado_pago = "PAGADO" if orden.pagado else "POR COBRAR"
+            estado_entrega = "SÍ" if orden.entregado else "NO"
+            
+            writer.writerow([
+                orden.id,
+                fecha_str,
+                f"{orden.nombre} {orden.apellido}",
+                orden.email,
+                orden.telefono,
+                orden.get_metodo_entrega_display(),
+                orden.total,
+                estado_pago,
+                estado_entrega,
+                orden.detalle_productos
+            ])
+            
+        return response
+    exportar_a_csv.short_description = "📥 Descargar reporte en Excel (CSV)"
 
 @admin.register(GananciaDiaria)
 class GananciaDiariaAdmin(admin.ModelAdmin):
@@ -130,19 +180,14 @@ class GananciaMensualAdmin(admin.ModelAdmin):
     def changelist_view(self, request, extra_context=None):
         qs = Orden.objects.filter(pagado=True)
 
-        # Agrupamos matemáticamente por MES
         ventas_por_mes = (
             qs.annotate(mes=TruncMonth('fecha'))
             .values('mes')
             .annotate(total_ganado=Sum('total'), cantidad_ordenes=Count('id'))
             .order_by('-mes')
         )
-
-        # Preparamos datos para el gráfico (Últimos 12 meses)
         datos_grafico = list(ventas_por_mes[:12])
         datos_grafico.reverse()
-
-        # Formateamos la fecha a "Mes Año" (Ej: 04/2026)
         fechas_str = [v['mes'].strftime("%m/%Y") for v in datos_grafico if v['mes']]
         totales_num = [float(v['total_ganado']) for v in datos_grafico if v['total_ganado']]
 
@@ -153,3 +198,9 @@ class GananciaMensualAdmin(admin.ModelAdmin):
         }
 
         return super().changelist_view(request, extra_context=extra_context)
+
+@admin.register(Resena)
+class ResenaAdmin(admin.ModelAdmin):
+    list_display = ('producto', 'nombre_cliente', 'estrellas', 'fecha')
+    list_filter = ('estrellas', 'producto')
+    search_fields = ('nombre_cliente', 'comentario')

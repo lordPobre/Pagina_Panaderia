@@ -12,13 +12,10 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
-from .models import Producto,Orden
+from .models import Producto,Orden,Resena
 
 def home(request):
-    # Traemos los productos normales (puedes excluir las ofertas si no quieres que se repitan)
     productos = Producto.objects.filter(es_oferta=False)
-    
-    # Traemos SOLO los productos que marcaste como oferta
     ofertas = Producto.objects.filter(es_oferta=True)
     
     return render(request, 'index.html', {
@@ -40,24 +37,20 @@ def agregar_al_carrito(request, producto_id):
     for _ in range(cantidad):
         carrito.append(producto_id)
     request.session['carrito'] = carrito
-
-    return redirect('home')
+    url_anterior = request.META.get('HTTP_REFERER', '/')
+    return redirect(url_anterior)
 
 def ver_carrito(request):
-    ids_carrito = request.session.get('carrito', [])
-    
-    # Usaremos un diccionario para agrupar los productos por su ID
+    ids_carrito = request.session.get('carrito', [])   
     carrito_agrupado = {}
     total = 0
     
     for producto_id in ids_carrito:
         producto = Producto.objects.filter(id=producto_id).first()
         if producto:
-            # Si el producto ya está en nuestro resumen, le sumamos 1 a la cantidad
             if producto.id in carrito_agrupado:
                 carrito_agrupado[producto.id]['cantidad'] += 1
                 carrito_agrupado[producto.id]['subtotal'] += producto.precio
-            # Si es la primera vez que lo vemos, lo registramos con cantidad 1
             else:
                 carrito_agrupado[producto.id] = {
                     'id': producto.id,
@@ -72,12 +65,31 @@ def ver_carrito(request):
 
     items = list(carrito_agrupado.values())
 
-    return render(request, 'carrito.html', {'items': items, 'total': total})
+    categorias_en_carrito = Producto.objects.filter(id__in=ids_carrito).values_list('categoria', flat=True)
+    sugerencias = Producto.objects.exclude(id__in=ids_carrito).exclude(categoria__in=categorias_en_carrito).filter(stock__gt=0)[:3]
+    
+    if not sugerencias:
+        sugerencias = Producto.objects.exclude(id__in=ids_carrito).filter(stock__gt=0)[:3]
+
+    meta_envio = 15000 
+    falta_para_envio = max(0, meta_envio - total)
+    
+    if total == 0:
+        progreso_envio = 0
+    else:
+        progreso_envio = min(100, (total / meta_envio) * 100)
+
+    return render(request, 'carrito.html', {
+        'items': items, 
+        'total': total,
+        'sugerencias': sugerencias,
+        'falta_para_envio': falta_para_envio,
+        'progreso_envio': progreso_envio
+    })
 
 def restar_uno(request, producto_id):
     carrito = request.session.get('carrito', [])
     if producto_id in carrito:
-        # remove() elimina solo la primera coincidencia que encuentra
         carrito.remove(producto_id)
         request.session['carrito'] = carrito
     return redirect('carrito')
@@ -89,15 +101,12 @@ def sumar_uno(request, producto_id):
     return redirect('carrito')
 
 def eliminar_producto(request, producto_id):
-    # Obtenemos el carrito actual
     carrito = request.session.get('carrito', [])
-    
-    # Si el producto está en el carrito, lo sacamos
+
     if producto_id in carrito:
         carrito.remove(producto_id)
-        request.session['carrito'] = carrito # Guardamos el carrito actualizado
-        
-    # Recargamos la página del carrito
+        request.session['carrito'] = carrito 
+
     return redirect('carrito')
 
 def vaciar_carrito(request):
@@ -121,8 +130,6 @@ def procesar_pago(request):
         metodo = request.POST.get('metodo_entrega')
         hora_retiro = request.POST.get('hora_retiro') if metodo == 'retiro' else None
         metodo_pago = request.POST.get('metodo_pago')
-        
-        # 1. Armamos UN SOLO diccionario con todos los datos
         datos = {
             'nombre': nombre,
             'apellido': apellido,
@@ -130,7 +137,7 @@ def procesar_pago(request):
             'telefono': telefono,
             'direccion': direccion,
             'metodo_entrega': metodo,
-            'hora_retiro': hora_retiro, # ¡Aquí viaja la hora a salvo!
+            'hora_retiro': hora_retiro, 
             'metodo_pago': metodo_pago
         }
 
@@ -192,12 +199,10 @@ def pago_exitoso(request):
     ids_carrito = request.session.get('carrito', [])
     
     if datos_cliente and ids_carrito:
-        # 1. Agrupamos los IDs para calcular cantidades reales
         conteo_productos = {}
         for p_id in ids_carrito:
             conteo_productos[p_id] = conteo_productos.get(p_id, 0) + 1
 
-        # 2. Calculamos el total y generamos el detalle con cantidades
         total = 0
         lista_nombres = []
         productos_db = Producto.objects.filter(id__in=conteo_productos.keys())
@@ -209,8 +214,6 @@ def pago_exitoso(request):
             lista_nombres.append(f"{cantidad}x {p.nombre}")
 
         detalle = ", ".join(lista_nombres)
-        
-        # 3. Preparamos datos finales seguros (usando .get() para evitar errores si algo falta)
         direccion_final = datos_cliente.get('direccion', '') if datos_cliente.get('metodo_entrega') == 'despacho' else "Retiro en local"
         pago_confirmado = (datos_cliente.get('metodo_pago') == 'mercadopago')
 
@@ -230,7 +233,12 @@ def pago_exitoso(request):
         )
 
         try:
-            contexto = {'orden': nueva_orden}
+            dominio = request.build_absolute_uri('/')[:-1]
+            contexto = {
+                'orden': nueva_orden,
+                'productos_comprados': productos_db, # Enviamos los objetos Producto
+                'dominio': dominio                   # Enviamos el dominio para los links
+            }
             html_cliente = render_to_string('emails/cliente.html', contexto)
             text_cliente = strip_tags(html_cliente)
             
@@ -242,7 +250,6 @@ def pago_exitoso(request):
             )
             msg_cliente.attach_alternative(html_cliente, "text/html")
             msg_cliente.send(fail_silently=False)
-
             html_vendedor = render_to_string('emails/vendedor.html', contexto)
             text_vendedor = strip_tags(html_vendedor)
             tipo_entrega = 'RETIRO' if nueva_orden.metodo_entrega == 'retiro' else 'DESPACHO'
@@ -268,24 +275,63 @@ def pago_exitoso(request):
     
     return redirect('home')
 
+def buscar_productos_ajax(request):
+    query = request.GET.get('term', '')
+    productos = Producto.objects.filter(nombre__icontains=query)[:5]
+    results = []
+    for p in productos:
+        results.append({
+            'id': p.id,
+            'label': p.nombre,
+            'value': p.nombre,
+            'url': f"/agregar/{p.id}/" 
+        })
+    return JsonResponse(results, safe=False)
+
 def reporte_ventas_json(request):
     if not request.user.is_staff:
         return JsonResponse({'error': 'No autorizado'}, status=403)
+
     hace_7_dias = now().date() - timedelta(days=7)
-    ventas = Orden.objects.filter(
-        fecha__gte=hace_7_dias, 
-        pagado=True 
-    ).annotate(
-        dia=TruncDate('fecha')
-    ).values('dia').annotate(
-        total_dia=Sum('total')
-    ).order_by('dia')
+    ventas_7_dias = Orden.objects.filter(fecha__gte=hace_7_dias, pagado=True).annotate(
+        dia=TruncDate('fecha')).values('dia').annotate(total_dia=Sum('total')).order_by('dia')
 
-    fechas = []
-    totales = []
-    
-    for v in ventas:
-        fechas.append(v['dia'].strftime('%d/%m'))
-        totales.append(v['total_dia'])
+    total_mes = Orden.objects.filter(
+        fecha__month=now().month, 
+        fecha__year=now().year, 
+        pagado=True
+    ).aggregate(Sum('total'))['total__sum'] or 0
+    pendientes = Orden.objects.filter(pagado=True, entregado=False).count()
+    fechas = [v['dia'].strftime('%d/%m') for v in ventas_7_dias]
+    totales = [v['total_dia'] for v in ventas_7_dias]
 
-    return JsonResponse({'fechas': fechas, 'totales': totales})
+    return JsonResponse({
+        'fechas': fechas, 
+        'totales': totales,
+        'total_mes': f"{total_mes:,}".replace(",", "."), 
+        'pendientes': pendientes
+    })
+
+def producto_detalle(request, producto_id):
+    producto = get_object_or_404(Producto, id=producto_id)
+    resenas = producto.resenas.all().order_by('-fecha')
+    return render(request, 'producto_detalle.html', {
+        'producto': producto,
+        'resenas': resenas
+    })
+
+def dejar_resena(request, producto_id):
+    if request.method == "POST":
+        producto = get_object_or_404(Producto, id=producto_id)
+        nombre = request.POST.get('nombre')
+        comentario = request.POST.get('comentario')
+        estrellas = request.POST.get('estrellas')
+
+        Resena.objects.create(
+            producto=producto,
+            nombre_cliente=nombre,
+            comentario=comentario,
+            estrellas=estrellas
+        )
+        return redirect('producto_detalle', producto_id=producto.id)
+    return redirect('home')

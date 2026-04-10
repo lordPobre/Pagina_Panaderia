@@ -147,38 +147,28 @@
         radiosEntrega.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value === 'retiro') {
-                    // 1. Configuración de Dirección (Ocultar)
                     wrapperDireccion.classList.add('d-none');
                     campoDireccion.required = false;
                     infoRetiro.classList.remove('d-none');
-                    
-                    // 2. Mostrar selector de Hora
                     seccionHora.style.display = 'block';
                     selectHora.required = true;
-                    
-                    // 3. Mostrar opción de pago presencial
                     wrapperPagoPresencial.classList.remove('d-none');
                 } else {
-                    // 1. Configuración de Dirección (Mostrar)
+
                     wrapperDireccion.classList.remove('d-none');
                     campoDireccion.required = true;
                     infoRetiro.classList.add('d-none');
-                    
-                    // 2. Ocultar selector de Hora y limpiar valor
                     seccionHora.style.display = 'none';
                     selectHora.required = false;
                     selectHora.value = "";
-                    
-                    // 3. Ocultar pago presencial y forzar a MercadoPago
                     wrapperPagoPresencial.classList.add('d-none');
                     radioPagoOnline.checked = true;
                     btnSubmit.innerText = "Continuar al Pago";
-                    btnSubmit.classList.replace('btn-success', 'btn-brand'); // Restaurar color por si acaso
+                    btnSubmit.classList.replace('btn-success', 'btn-brand'); 
                 }
             });
         });
 
-        // Lógica para cambiar el color del botón según el método de pago
         document.querySelectorAll('input[name="metodo_pago"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value === 'presencial') {

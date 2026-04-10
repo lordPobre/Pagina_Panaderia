@@ -46,21 +46,19 @@
     document.addEventListener('DOMContentLoaded', function() {
         const fechas = JSON.parse('{{ fechas_json|safe }}');
         const totales = JSON.parse('{{ totales_json|safe }}');
-
         const ctx = document.getElementById('graficoVentasMensuales').getContext('2d');
-        
-        // Gráfico de Barras para el mensual (suele leerse mejor para meses)
+
         new Chart(ctx, {
-            type: 'bar', // Cambiado a barras
+            type: 'bar', 
             data: {
                 labels: fechas,
                 datasets: [{
                     label: 'Ingresos Mensuales ($)',
                     data: totales,
-                    backgroundColor: 'rgba(52, 152, 219, 0.8)', // Azul moderno
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)', 
                     borderColor: 'rgba(41, 128, 185, 1)',
                     borderWidth: 1,
-                    borderRadius: 6 // Bordes redondeados en las barras
+                    borderRadius: 6 
                 }]
             },
             options: {
