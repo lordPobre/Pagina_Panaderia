@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="bg-brand text-center py-5">
+    <div class="container text-white">
+        <h1 class="display-4 fw-bold" style="font-family: 'Poppins', sans-serif;">El Sabor de la Tradición</h1>
+    </div>
+</header>
+
+{% if ofertas %}
+<div class="container mt-5">
+    <div class="d-flex align-items-center mb-4">
+        <h2 class="fw-bold mb-0" style="color: #d35400; font-family: 'Poppins', sans-serif;">
+            <i class="bi bi-star-fill text-warning me-2"></i>Ofertas del Día
+        </h2>
+        <span class="badge bg-danger ms-3 pulse-animation">¡Por tiempo limitado!</span>
+    </div>
+    
+    <div class="row">
+        {% for p in ofertas %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 tarjeta-producto shadow-sm border-warning" style="border-width: 2px; border-radius: 16px;">
+                <div class="position-absolute top-0 end-0 bg-warning text-dark px-3 py-1 rounded-bl fw-bold shadow-sm" style="border-bottom-left-radius: 10px; font-family: 'Poppins', sans-serif; z-index: 1;">
+                    OFERTA
+                </div>
+                
+                {% if p.imagen %}
+                    <img src="{{ p.imagen.url }}" class="card-img-top" style="height: 250px; object-fit: cover; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px; border-top-left-radius: 14px; border-top-right-radius: 14px;">
+                        <i class="bi bi-camera text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body d-flex flex-column text-center bg-light" style="border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;">
+                    <h4 class="tarjeta-titulo fw-bold text-dark mb-1">{{ p.nombre }}</h4>
+                    <p class="text-muted text-uppercase fw-semibold mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">{{ p.categoria }}</p>
+                    
+                    <div class="d-flex justify-content-center align-items-center my-3">
+                        {% if p.precio_anterior %}
+                            <span class="text-muted text-decoration-line-through me-2 fs-5" style="font-family: 'Poppins', sans-serif;">${{ p.precio_anterior }}</span>
+                        {% endif %}
+                        <h3 class="tarjeta-precio text-danger fw-bold mb-0">${{ p.precio }}</h3>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <form action="{% url 'agregar' p.id %}" method="POST">
+                            {% csrf_token %}
+                            <div class="input-group input-group-sm mb-2 justify-content-center">
+                                <span class="input-group-text bg-white border-0 text-muted">Cant.</span>
+                                <input type="number" name="cantidad" class="form-control text-center border-0 fw-bold bg-white" value="1" min="1" max="{{ p.stock }}" style="max-width: 80px;">
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100 fw-bold shadow-sm py-2" style="font-family: 'Poppins', sans-serif; border-radius: 8px;" {% if p.stock == 0 %}disabled{% endif %}>
+                                ¡Llevar Oferta!
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<hr class="my-5" style="border-color: #ddd;">
+{% endif %}
+
+<div class="container mt-5">
+    <h2 class="fw-bold mb-4" style="color: #2c3e50; font-family: 'Poppins', sans-serif;">Nuestro Catálogo</h2>
+    <div class="row">
+        {% for p in productos %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 tarjeta-producto shadow-sm border-0" style="border-radius: 16px;">
+                
+                {% if p.imagen %}
+                    <img src="{{ p.imagen.url }}" class="card-img-top" style="height: 200px; object-fit: cover; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                        <i class="bi bi-camera text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body d-flex flex-column text-center p-4">
+                    <h5 class="tarjeta-titulo fw-bold text-dark mb-1">{{ p.nombre }}</h5>
+                    <p class="text-muted text-uppercase fw-semibold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">{{ p.categoria }}</p>
+                    
+                    <h4 class="tarjeta-precio text-success fw-bold mb-4">${{ p.precio }}</h4>
+                    
+                    <div class="mt-auto">
+                        <form action="{% url 'agregar' p.id %}" method="POST">
+                            {% csrf_token %}
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light border-0 text-muted" style="font-size: 0.8rem;">Cant.</span>
+                                    <input type="number" name="cantidad" class="form-control text-center bg-light border-0 fw-bold" value="1" min="1" max="{{ p.stock }}">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-catalogo w-100 shadow-sm" {% if p.stock == 0 %}disabled{% endif %}>
+                                <i class="bi bi-cart-plus me-1"></i> Agregar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

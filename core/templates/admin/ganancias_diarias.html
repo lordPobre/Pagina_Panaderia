@@ -1,0 +1,89 @@
+{% extends "admin/change_list.html" %}
+
+{% block result_list %}
+<div class="container-fluid mt-3 mb-5">
+    
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+        <div class="card-header bg-white border-0 pt-4 pb-0">
+            <h5 class="fw-bold text-secondary"><i class="fas fa-chart-line text-warning me-2"></i> Evolución de Ganancias (Últimos 7 días)</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="graficoVentas" height="80"></canvas>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 text-center">
+                <thead class="bg-light text-muted">
+                    <tr>
+                        <th class="py-3 text-start ps-4">Fecha</th>
+                        <th class="py-3">Cantidad de Pedidos</th>
+                        <th class="py-3 text-end pe-4">Total Ganado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dia in ventas_por_dia %}
+                    <tr>
+                        <td class="text-start ps-4 fw-bold text-secondary">{{ dia.dia|date:"d M, Y" }}</td>
+                        <td><span class="badge bg-secondary">{{ dia.cantidad_ordenes }} pedidos</span></td>
+                        <td class="text-end pe-4 fw-bold text-success" style="font-size: 1.1rem;">${{ dia.total_ganado }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="py-5 text-muted">Aún no hay ventas registradas pagadas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Recibimos los datos desde Python (Django)
+        const fechas = JSON.parse('{{ fechas_json|safe }}');
+        const totales = JSON.parse('{{ totales_json|safe }}');
+
+        const ctx = document.getElementById('graficoVentas').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: [{
+                    label: 'Ingresos Diarios ($)',
+                    data: totales,
+                    borderColor: '#f39c12', // Color naranja panadería
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#f39c12',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    fill: true,
+                    tension: 0.4 // Hace que la línea sea curva y moderna
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false } // Ocultamos la leyenda para que sea más limpio
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [5, 5] } // Líneas punteadas de fondo
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

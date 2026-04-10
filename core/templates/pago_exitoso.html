@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            
+            <div class="mb-4">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+            </div>
+
+            <h1 class="fw-bold mb-3">¡Pedido Recibido!</h1>
+            
+            {% if orden.metodo_pago == 'presencial' %}
+                <p class="lead text-muted">Hemos registrado tu pedido. Recuerda que seleccionaste <strong>pago en el local</strong>.</p>
+            {% else %}
+                <p class="lead text-muted">Tu pago ha sido procesado exitosamente a través de MercadoPago.</p>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm mt-5 text-start">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold border-bottom pb-3 mb-3">Resumen de la Orden #{{ orden.id }}</h5>
+                    
+                    <div class="row mb-2">
+                        <div class="col-6 text-muted">Cliente:</div>
+                        <div class="col-6 fw-bold text-end">{{ orden.nombre }} {{ orden.apellido }}</div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-6 text-muted">Método de Entrega:</div>
+                        <div class="col-6 fw-bold text-end">
+                            {{ orden.get_metodo_entrega_display }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-6 text-muted">Productos:</div>
+                        <div class="col-6 fw-bold text-end text-truncate">{{ orden.detalle_productos }}</div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-6 text-muted">Total pagado/a pagar:</div>
+                        <div class="col-6 fw-bold text-end text-success fs-4">${{ orden.total }}</div>
+                    </div>
+
+                    {% if orden.metodo_entrega == 'retiro' %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-shop me-2"></i> 
+                            <strong>Instrucciones de Retiro:</strong> Acércate a nuestra sucursal en Av. Principal #123 con tu número de orden.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-truck me-2"></i> 
+                            <strong>Instrucciones de Envío:</strong> En breve procesaremos tu pedido para enviarlo a la dirección: <em>{{ orden.direccion }}</em>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <a href="{% url 'home' %}" class="btn btn-brand btn-lg px-5 text-white fw-bold shadow-sm">
+                    Volver a la Tienda
+                </a>
+                <p class="mt-4 text-muted small">Te enviamos un correo con los detalles de esta confirmación.</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

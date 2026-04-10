@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold mb-4" style="color: #2c3e50;">Información de Envío</h2>
+                    
+                    <form action="{% url 'procesar_pago' %}" method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nombre</label>
+                                <input type="text" name="nombre" class="form-control" placeholder="Ej: Juan" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Apellido</label>
+                                <input type="text" name="apellido" class="form-control" placeholder="Ej: Pérez" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Correo Electrónico</label>
+                            <input type="email" name="email" class="form-control" placeholder="juan.perez@email.com" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Número de Celular</label>
+                            <div class="input-group">
+                                <span class="input-group-text">+56</span>
+                                <input type="tel" name="telefono" class="form-control" placeholder="9 1234 5678" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">1. ¿Cómo quieres recibir tu pedido?</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="metodo_entrega" id="entrega_despacho" value="despacho" checked>
+                                <label class="form-check-label" for="entrega_despacho">
+                                    <i class="bi bi-truck me-1"></i> Despacho a Domicilio
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="metodo_entrega" id="entrega_retiro" value="retiro">
+                                <label class="form-check-label" for="entrega_retiro">
+                                    <i class="bi bi-shop me-1"></i> Retiro en Local <span class="text-muted small">(Gratis)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="seccion_hora_retiro" class="mb-3" style="display: none;">
+                            <label class="form-label fw-bold">¿A qué hora vendrás a retirar?</label>
+                            <select name="hora_retiro" id="hora_retiro_select" class="form-select">
+                                <option value="" disabled selected>Selecciona un horario disponible...</option>
+                                
+                                <optgroup label="Jornada Mañana">
+                                    <option value="10:00">10:00 hrs</option>
+                                    <option value="10:30">10:30 hrs</option>
+                                    <option value="11:00">11:00 hrs</option>
+                                    <option value="11:30">11:30 hrs</option>
+                                    <option value="12:00">12:00 hrs</option>
+                                    <option value="12:30">12:30 hrs</option>
+                                    <option value="13:00">13:00 hrs</option>
+                                    <option value="13:30">13:30 hrs</option>
+                                    <option value="14:00">14:00 hrs</option>
+                                </optgroup>
+                                
+                                <optgroup label="Jornada Tarde">
+                                    <option value="15:30">15:30 hrs</option>
+                                    <option value="16:00">16:00 hrs</option>
+                                    <option value="16:30">16:30 hrs</option>
+                                    <option value="17:00">17:00 hrs</option>
+                                    <option value="17:30">17:30 hrs</option>
+                                    <option value="18:00">18:00 hrs</option>
+                                    <option value="18:30">18:30 hrs</option>
+                                    <option value="19:00">19:00 hrs</option>
+                                </optgroup>
+                            </select>
+                            <div class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> Nuestro horario de colación es de 14:00 a 15:30 hrs.
+                            </div>
+                        </div>
+
+                        <div id="wrapper_direccion" class="mb-4">
+                            <label class="form-label fw-semibold">Dirección de Despacho</label>
+                            <textarea name="direccion" id="campo_direccion" class="form-control" rows="2" placeholder="Calle, número, departamento o villa..." required></textarea>
+                        </div>
+
+                        <div id="info_retiro" class="alert alert-info d-none mb-4">
+                            <i class="bi bi-info-circle-fill me-2"></i> 
+                            Puedes retirar en <strong>Av. Principal #123, Viña del Mar</strong> (09:00 - 20:00).
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">2. ¿Cómo prefieres pagar?</label>
+                            
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="metodo_pago" id="pago_online" value="mercadopago" checked>
+                                <label class="form-check-label" for="pago_online">
+                                    <i class="bi bi-credit-card-2-back me-1"></i> Pagar ahora con MercadoPago
+                                </label>
+                            </div>
+
+                            <div class="form-check d-none" id="wrapper_pago_presencial">
+                                <input class="form-check-input" type="radio" name="metodo_pago" id="pago_presencial" value="presencial">
+                                <label class="form-check-label" for="pago_presencial">
+                                    <i class="bi bi-cash-stack me-1"></i> Pagar al retirar en el local
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-brand btn-lg text-white fw-bold shadow-sm" id="btn_submit">
+                                Continuar al Pago
+                            </button>
+                            <a href="{% url 'carrito' %}" class="btn btn-link text-muted text-center">Volver al carrito</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const radiosEntrega = document.querySelectorAll('input[name="metodo_entrega"]');
+        const wrapperDireccion = document.getElementById('wrapper_direccion');
+        const campoDireccion = document.getElementById('campo_direccion');
+        const infoRetiro = document.getElementById('info_retiro');
+        
+        // Elementos de la Hora de Retiro
+        const seccionHora = document.getElementById('seccion_hora_retiro');
+        const selectHora = document.getElementById('hora_retiro_select');
+        
+        const wrapperPagoPresencial = document.getElementById('wrapper_pago_presencial');
+        const radioPagoOnline = document.getElementById('pago_online');
+        const btnSubmit = document.getElementById('btn_submit');
+
+        radiosEntrega.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'retiro') {
+                    // 1. Configuración de Dirección (Ocultar)
+                    wrapperDireccion.classList.add('d-none');
+                    campoDireccion.required = false;
+                    infoRetiro.classList.remove('d-none');
+                    
+                    // 2. Mostrar selector de Hora
+                    seccionHora.style.display = 'block';
+                    selectHora.required = true;
+                    
+                    // 3. Mostrar opción de pago presencial
+                    wrapperPagoPresencial.classList.remove('d-none');
+                } else {
+                    // 1. Configuración de Dirección (Mostrar)
+                    wrapperDireccion.classList.remove('d-none');
+                    campoDireccion.required = true;
+                    infoRetiro.classList.add('d-none');
+                    
+                    // 2. Ocultar selector de Hora y limpiar valor
+                    seccionHora.style.display = 'none';
+                    selectHora.required = false;
+                    selectHora.value = "";
+                    
+                    // 3. Ocultar pago presencial y forzar a MercadoPago
+                    wrapperPagoPresencial.classList.add('d-none');
+                    radioPagoOnline.checked = true;
+                    btnSubmit.innerText = "Continuar al Pago";
+                    btnSubmit.classList.replace('btn-success', 'btn-brand'); // Restaurar color por si acaso
+                }
+            });
+        });
+
+        // Lógica para cambiar el color del botón según el método de pago
+        document.querySelectorAll('input[name="metodo_pago"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'presencial') {
+                    btnSubmit.innerText = "Confirmar Pedido (Pago en Local)";
+                    btnSubmit.classList.replace('btn-brand', 'btn-success');
+                } else {
+                    btnSubmit.innerText = "Continuar al Pago";
+                    btnSubmit.classList.replace('btn-success', 'btn-brand');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

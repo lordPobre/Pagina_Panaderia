@@ -1,0 +1,54 @@
+{% load log %}
+{% get_admin_log 30 as admin_log %}
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white border-0 pt-4 pb-0">
+        <h5 class="fw-bold text-secondary">
+            <i class="fas fa-history text-info me-2"></i> Historial de Órdenes
+        </h5>
+    </div>
+    
+    <div class="card-body p-3">
+        <div class="timeline timeline-inverse">
+            {% for entry in admin_log %}
+                {% if entry.content_type.model == 'orden' %}
+                    <div>
+                        {% if entry.is_addition %}
+                            <i class="fas fa-plus bg-success text-white"></i>
+                        {% elif entry.is_change %}
+                            <i class="fas fa-edit bg-info text-white"></i>
+                        {% elif entry.is_deletion %}
+                            <i class="fas fa-trash bg-danger text-white"></i>
+                        {% endif %}
+
+                        <div class="timeline-item shadow-sm" style="border-radius: 10px;">
+                            <span class="time text-muted"><i class="far fa-clock"></i> {{ entry.action_time|timesince }} atrás</span>
+                            
+                            <h3 class="timeline-header border-0 pb-0">
+                                {% if not entry.is_deletion and entry.get_admin_url %}
+                                    <a href="{{ entry.get_admin_url }}" class="fw-bold text-primary">{{ entry.object_repr }}</a>
+                                {% else %}
+                                    <span class="fw-bold">{{ entry.object_repr }}</span>
+                                {% endif %}
+                            </h3>
+                            
+                            <div class="timeline-body pt-1 pb-2 text-muted small">
+                                {% if entry.is_addition %}
+                                    <span class="text-success fw-bold">Nueva orden recibida</span>
+                                {% elif entry.is_change %}
+                                    Modificada: {{ entry.get_change_message }}
+                                {% elif entry.is_deletion %}
+                                    Orden eliminada del sistema
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            
+            <div>
+                <i class="far fa-clock bg-light text-muted"></i>
+            </div>
+        </div>
+    </div>
+</div>

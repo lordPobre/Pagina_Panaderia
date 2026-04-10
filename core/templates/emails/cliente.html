@@ -1,0 +1,81 @@
+<div style="background-color: #f4f7f6; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+        
+        <div style="height: 6px; background: linear-gradient(90deg, #f39c12, #e67e22);"></div>
+
+        <div style="padding: 40px 40px 20px; text-align: center;">
+            <h1 style="color: #2c3e50; font-size: 28px; margin: 0; font-weight: 800;">¡Gracias por preferirnos! 🥖</h1>
+            <p style="color: #7f8c8d; font-size: 16px; margin-top: 10px;">Hola {{ orden.nombre }}, estamos preparando todo para ti.</p>
+        </div>
+
+        <div style="text-align: center; padding: 0 40px 20px;">
+            <span style="display: inline-block; background-color: #fff3e0; color: #d35400; padding: 8px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; letter-spacing: 1px;">
+                ORDEN #{{ orden.id }}
+            </span>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #f0f0f0; margin: 0 40px;">
+
+        <div style="padding: 30px 40px;">
+            <h3 style="color: #2c3e50; font-size: 18px; margin-top: 0; margin-bottom: 15px;">Tu Pedido</h3>
+            
+            <div style="background-color: #f8fafc; border-radius: 10px; padding: 20px; border: 1px solid #edf2f7; margin-bottom: 25px;">
+                <p style="margin: 0; color: #4a5568; line-height: 1.8; font-size: 15px; font-weight: 500;">
+                    {{ orden.detalle_productos }}
+                </p>
+            </div>
+
+            <div style="text-align: right;">
+                <span style="color: #a0aec0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Total Pagado</span><br>
+                <span style="color: #27ae60; font-size: 34px; font-weight: 800; letter-spacing: -1px;">${{ orden.total }}</span>
+            </div>
+        </div>
+
+        <div style="background-color: #2c3e50; color: #ffffff; padding: 30px 40px; margin: 10px 40px 40px; border-radius: 12px;">
+            <h4 style="margin: 0 0 20px 0; color: #f39c12; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Información de Entrega</h4>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 15px; line-height: 1.6;">
+                <tr>
+                    <td style="color: #a0aec0; padding-bottom: 12px;" width="35%">Método:</td>
+                    <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;" width="65%">{{ orden.get_metodo_entrega_display }}</td>
+                </tr>
+                
+                {% if orden.metodo_entrega == 'retiro' %}
+                <tr>
+                    <td style="color: #a0aec0; padding-bottom: 12px;">Hora:</td>
+                    <td style="font-weight: bold; padding-bottom: 12px; color: #f1c40f; font-size: 16px;">{{ orden.hora_retiro }} hrs</td>
+                </tr>
+                <tr>
+                    <td style="color: #a0aec0; padding-bottom: 12px;">Dirección:</td>
+                    <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;">Av. Principal #123, Viña del Mar</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td style="color: #a0aec0; padding-bottom: 12px;">Destino:</td>
+                    <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;">{{ orden.direccion }}</td>
+                </tr>
+                {% endif %}
+                
+                <tr>
+                    <td style="color: #a0aec0;">Pago:</td>
+                    <td style="font-weight: 600; color: #ffffff;">
+                        {{ orden.get_metodo_pago_display }}
+                        {% if orden.pagado %}
+                            <span style="color: #2ecc71; font-size: 13px; margin-left: 5px;">(Confirmado)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #eeeeee;">
+            <p style="color: #a0aec0; font-size: 13px; margin: 0;">¿Tienes dudas con tu pedido?</p>
+            <p style="color: #a0aec0; font-size: 13px; margin: 5px 0 0 0;">
+                Responde a este correo o háblanos a nuestro 
+                <a href="https://wa.me/56987654321?text=Hola,%20tengo%20una%20consulta" style="color: #2ecc71; text-decoration: none; font-weight: bold;">WhatsApp</a>.
+            </p>
+        </div>
+
+    </div>
+</div>

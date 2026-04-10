@@ -1,0 +1,25 @@
+<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border-left: 5px solid #2980b9; padding: 15px; background-color: #f9f9f9;">
+    <h2 style="color: #2980b9; margin-top: 0;">NUEVO PEDIDO RECIBIDO (#{{ orden.id }})</h2>
+    
+    <p>Tienes un nuevo pedido que preparar. Aquí están los detalles:</p>
+    
+    <div style="background-color: white; padding: 15px; border: 1px solid #eee; margin-bottom: 15px;">
+        <h4 style="margin-top: 0; color: #e67e22;">¿QUÉ HAY QUE PREPARAR?</h4>
+        <p style="white-space: pre-line; font-size: 1.1em; font-weight: bold;">{{ orden.detalle_productos }}</p>
+        <p><strong>Total a cobrar/pagado:</strong> ${{ orden.total }}</p>
+        <p><strong>Estado de Pago:</strong> {% if orden.pagado %}<span style="color: green;">PAGADO ONLINE</span>{% else %}<span style="color: red;">PAGO PRESENCIAL (Por cobrar)</span>{% endif %}</p>
+    </div>
+
+    <div style="background-color: white; padding: 15px; border: 1px solid #eee;">
+        <h4 style="margin-top: 0; color: #e67e22;">LOGÍSTICA Y CLIENTE</h4>
+        <p><strong>Cliente:</strong> {{ orden.nombre }} {{ orden.apellido }}</p>
+        <p><strong>Teléfono:</strong> <a href="https://wa.me/56{{ orden.telefono|slice:'-8:' }}">{{ orden.telefono }}</a></p>
+        
+        {% if orden.metodo_entrega == 'retiro' %}
+            <p style="background-color: #ffeb3b; padding: 5px; display: inline-block;"><strong>¡VIENEN AL LOCAL! a las {{ orden.hora_retiro }} hrs</strong></p>
+        {% else %}
+            <p style="background-color: #d1c4e9; padding: 5px; display: inline-block;"><strong>¡HAY QUE DESPACHAR!</strong></p>
+            <p><strong>Dirección:</strong> {{ orden.direccion }}</p>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %} {% block content %}
+<div class="container my-5 py-5">
+    <div class="row align-items-center">
+        
+        <div class="col-lg-6 mb-4 mb-lg-0 pe-lg-5">
+            <h6 class="text-uppercase fw-bold mb-2" style="color: #d35400;">Nuestra Historia</h6>
+            <h1 class="display-4 fw-bold mb-4" style="color: #2c3e50;">Más de 20 años amasando tradición</h1>
+            
+            <p class="lead text-muted mb-4">
+                Lo que comenzó como un pequeño horno de barro en el patio de nuestra
+                casa, hoy es un punto de encuentro para los amantes del buen pan.
+            </p>
+            
+            <p class="mb-4">
+                En <strong>Panaderia La Jovita</strong>, creemos que el secreto no está en la maquinaria, sino en las manos que
+                preparan cada masa. Usamos recetas heredadas de nuestros abuelos, respetando los
+                tiempos de leudado y utilizando solo ingredientes naturales, sin conservantes ni premezclas.
+            </p>
+            
+            <p class="mb-0">
+                Cada empanada, cada marraqueta y cada pastel lleva el sello de cariño que nos
+                caracteriza. Gracias por dejarnos ser parte de tu mesa.
+            </p>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="position-relative rounded-4 overflow-hidden shadow-lg">
+                <img src="{% static 'img/empanada.jpg' %}" 
+                     class="img-fluid w-100" 
+                     alt="Nuestra Panadería" 
+                     style="object-fit: cover; height: 500px;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light py-5 mt-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-4 mb-4">
+                <div class="fs-1 text-warning mb-3"><i class="bi bi-heart-fill"></i></div>
+                <h4 class="fw-bold">Hecho con Amor</h4>
+                <p class="text-muted">No somos una fábrica. Cada producto es elaborado artesanalmente cada mañana.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="fs-1 text-warning mb-3"><i class="bi bi-flower1"></i></div>
+                <h4 class="fw-bold">Ingredientes Naturales</h4>
+                <p class="text-muted">Solo harina selecta, huevos de campo y mantequilla real. Nada de químicos.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="fs-1 text-warning mb-3"><i class="bi bi-shop"></i></div>
+                <h4 class="fw-bold">Siempre Fresco</h4>
+                <p class="text-muted">Horneamos varias veces al día para asegurar que te lleves el pan caliente.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

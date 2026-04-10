@@ -1,0 +1,16 @@
+# Django
+*.log
+*.pot
+*.py[co]
+__pycache__/
+local_settings.py
+db.sqlite3
+media/
+
+# Entornos virtuales
+venv/
+env/
+.env
+
+# Archivos de sistema
+.DS_Store
