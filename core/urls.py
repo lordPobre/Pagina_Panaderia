@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import reporte_ventas_json
 from . import views
 
 urlpatterns = [
@@ -14,5 +15,6 @@ urlpatterns = [
     path('restar/<int:producto_id>/', views.restar_uno, name='restar_uno'),
     path('sumar-uno/<int:producto_id>/', views.sumar_uno, name='sumar_uno'),
     path('pago-exitoso/', views.pago_exitoso, name='pago_exitoso'),
+    path('api/ventas-chart/', reporte_ventas_json, name='api_ventas_chart')
 
 ]

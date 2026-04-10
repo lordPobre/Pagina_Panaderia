@@ -40,7 +40,7 @@ ROOT_URLCONF = 'panaderia.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -60,7 +60,7 @@ JAZZMIN_SETTINGS = {
     "site_header": "Panel de Administración",
     "site_brand": "La Panadería", # Aquí puedes poner el nombre real
     "welcome_sign": "Bienvenido al sistema de gestión",
-    "copyright": "Tu Empresa TI",
+    "copyright": "Perseus Technology",
     
     # Buscador superior (Busca en órdenes y productos a la vez)
     "search_model": ["core.Orden", "core.Producto"],

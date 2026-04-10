@@ -1,5 +1,10 @@
 import mercadopago
 import os
+from django.http import JsonResponse
+from django.db.models import Sum
+from django.db.models.functions import TruncDate
+from django.utils.timezone import now
+from datetime import timedelta
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.mail import send_mail
@@ -209,7 +214,6 @@ def pago_exitoso(request):
         direccion_final = datos_cliente.get('direccion', '') if datos_cliente.get('metodo_entrega') == 'despacho' else "Retiro en local"
         pago_confirmado = (datos_cliente.get('metodo_pago') == 'mercadopago')
 
-        # 4. Creamos la orden en la BD
         nueva_orden = Orden.objects.create(
             nombre=datos_cliente['nombre'],
             apellido=datos_cliente['apellido'],
@@ -217,22 +221,16 @@ def pago_exitoso(request):
             telefono=datos_cliente['telefono'],
             metodo_entrega=datos_cliente['metodo_entrega'],
             metodo_pago=datos_cliente['metodo_pago'],            
-            direccion=direccion_final,  # <-- CORREGIDO: Ahora usa la variable calculada
+            direccion=direccion_final,  
             total=total,
             detalle_productos=detalle,
-            pagado=pago_confirmado,     # <-- CORREGIDO: Ahora usa la variable calculada
+            pagado=pago_confirmado,     
             carrito_data=conteo_productos,
             hora_retiro=datos_cliente.get('hora_retiro')
         )
 
-        # ==========================================
-        # 5. ENVÍO DE CORREOS HTML (Cliente y Vendedor)
-        # ==========================================
         try:
-            # Diccionario que enviamos a las plantillas HTML
             contexto = {'orden': nueva_orden}
-
-            # --- CORREO 1: AL CLIENTE ---
             html_cliente = render_to_string('emails/cliente.html', contexto)
             text_cliente = strip_tags(html_cliente)
             
@@ -245,11 +243,8 @@ def pago_exitoso(request):
             msg_cliente.attach_alternative(html_cliente, "text/html")
             msg_cliente.send(fail_silently=False)
 
-            # --- CORREO 2: AL VENDEDOR (ADMIN) ---
             html_vendedor = render_to_string('emails/vendedor.html', contexto)
             text_vendedor = strip_tags(html_vendedor)
-            
-            # El asunto te avisará de inmediato si es despacho o retiro
             tipo_entrega = 'RETIRO' if nueva_orden.metodo_entrega == 'retiro' else 'DESPACHO'
             asunto_vendedor = f"NUEVO PEDIDO: #{nueva_orden.id} - {tipo_entrega}"
             
@@ -257,23 +252,40 @@ def pago_exitoso(request):
                 subject=asunto_vendedor,
                 body=text_vendedor,
                 from_email=settings.EMAIL_HOST_USER,
-                to=[settings.EMAIL_HOST_USER] # Llega al correo configurado en settings
+                to=[settings.EMAIL_HOST_USER] 
             )
             msg_vendedor.attach_alternative(html_vendedor, "text/html")
             msg_vendedor.send(fail_silently=False)
             
         except Exception as e:
-            # Usamos un print para que si el correo falla en desarrollo (ej. mala contraseña), 
-            # no se caiga la página y el cliente igual vea la pantalla de éxito.
             print(f"Error enviando correos: {e}")
-        # ==========================================
 
-        # 6. LIMPIEZA: Vaciamos el carrito y los datos temporales
         request.session['carrito'] = []
-        request.session['datos_cliente'] = {} # <-- CORREGIDO: Mejor dejar un dict vacío que None
+        request.session['datos_cliente'] = {} 
         request.session.modified = True
         
         return render(request, 'pago_exitoso.html', {'orden': nueva_orden})
     
-    # Si alguien entra a la URL de éxito sin comprar, lo enviamos al inicio
     return redirect('home')
+
+def reporte_ventas_json(request):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+    hace_7_dias = now().date() - timedelta(days=7)
+    ventas = Orden.objects.filter(
+        fecha__gte=hace_7_dias, 
+        pagado=True 
+    ).annotate(
+        dia=TruncDate('fecha')
+    ).values('dia').annotate(
+        total_dia=Sum('total')
+    ).order_by('dia')
+
+    fechas = []
+    totales = []
+    
+    for v in ventas:
+        fechas.append(v['dia'].strftime('%d/%m'))
+        totales.append(v['total_dia'])
+
+    return JsonResponse({'fechas': fechas, 'totales': totales})

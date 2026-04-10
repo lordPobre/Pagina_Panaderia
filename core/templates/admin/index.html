@@ -1,55 +1,113 @@
 {% extends "admin/index.html" %}
 
 {% block content %}
-<div class="container-fluid mb-4">
-    <div class="row">
-        <div class="col-lg-4 col-6">
-            <div class="small-box bg-dark shadow-sm" style="border-radius: 15px;">
-                <div class="inner p-4">
-                    <h3 class="text-white">$450.000</h3>
-                    <p class="text-white-50">Ventas Totales (Este mes)</p>
+
+    {{ block.super }}
+
+    <hr class="mt-4 mb-4"> <div class="container-fluid mb-4 mt-4">
+        <div class="row">
+            <div class="col-lg-4 col-6">
+                <div class="small-box bg-dark shadow-sm" style="border-radius: 15px;">
+                    <div class="inner p-4">
+                        <h3 class="text-white">$450.000</h3>
+                        <p class="text-white-50">Ventas Totales (Este mes)</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <a href="/admin/core/orden/" class="small-box-footer" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+                        Ver Órdenes <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
-                <div class="icon">
-                    <i class="fas fa-wallet"></i>
+            </div>
+
+            <div class="col-lg-4 col-6">
+                 <div class="small-box bg-white shadow-sm" style="border-radius: 15px;">
+                    <div class="inner p-4">
+                        <h3 class="text-dark">12</h3>
+                        <p class="text-muted">Órdenes Pendientes de Retiro</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-shopping-bag text-muted"></i>
+                    </div>
+                    <a href="/admin/core/orden/?pagado__exact=1" class="small-box-footer text-muted" style="background-color: #f8f9fa; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+                        Gestionar Retiros <i class="fas fa-arrow-circle-right"></i>
+                    </a>
                 </div>
-                <a href="/admin/core/orden/" class="small-box-footer" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
-                    Ver Órdenes <i class="fas fa-arrow-circle-right"></i>
-                </a>
+            </div>
+
+            <div class="col-lg-4 col-12">
+                 <div class="small-box bg-white shadow-sm" style="border-radius: 15px;">
+                    <div class="inner p-4">
+                        <h3 class="text-dark">156</h3>
+                        <p class="text-muted">Clientes Registrados</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users text-muted"></i>
+                    </div>
+                    <a href="#" class="small-box-footer text-muted" style="background-color: #f8f9fa; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+                        Ver Clientes <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="col-lg-4 col-6">
-            <div class="small-box bg-white shadow-sm" style="border-radius: 15px;">
-                <div class="inner p-4">
-                    <h3 class="text-dark">12</h3>
-                    <p class="text-muted">Órdenes Pendientes de Retiro</p>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card card-primary card-outline shadow-sm">
+                    <div class="card-header border-0">
+                        <h3 class="card-title text-primary fw-bold">
+                            <i class="fas fa-chart-line mr-2"></i> Ingresos de los últimos 7 días
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="graficoVentas" height="80"></canvas>
+                    </div>
                 </div>
-                <div class="icon">
-                    <i class="fas fa-shopping-bag text-muted"></i>
-                </div>
-                <a href="/admin/core/orden/?pagado__exact=1" class="small-box-footer text-muted" style="background-color: #f8f9fa; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
-                    Gestionar Retiros <i class="fas fa-arrow-circle-right"></i>
-                </a>
-            </div>
-        </div>
-
-        <div class="col-lg-4 col-12">
-            <div class="small-box bg-white shadow-sm" style="border-radius: 15px;">
-                <div class="inner p-4">
-                    <h3 class="text-dark">156</h3>
-                    <p class="text-muted">Clientes Registrados</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-users text-muted"></i>
-                </div>
-                <a href="#" class="small-box-footer text-muted" style="background-color: #f8f9fa; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
-                    Ver Clientes <i class="fas fa-arrow-circle-right"></i>
-                </a>
             </div>
         </div>
     </div>
-</div>
 
-{{ block.super }}
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/ventas-chart/')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('graficoVentas').getContext('2d');
+                if (data.fechas.length === 0) {
+                    data.fechas = ['Sin ventas recientes'];
+                    data.totales = [0];
+                }
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.fechas,
+                        datasets: [{
+                            label: 'Ingresos Diarios ($ CLP)',
+                            data: data.totales,
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#fff',
+                            pointRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: true } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: function(value) { return '$' + value; } }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error cargando el gráfico:', error));
+        });
+    </script>
 {% endblock %}
