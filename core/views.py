@@ -1,4 +1,5 @@
 import mercadopago
+import os
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.mail import send_mail
@@ -133,7 +134,7 @@ def procesar_pago(request):
         if datos['metodo_pago'] == 'presencial':
             return redirect('pago_exitoso')
 
-        sdk = mercadopago.SDK("APP_USR-7491798060915484-040812-bf58bd5cbc1e5fbdb2e73729822a7ccb-3323298062") 
+        sdk = mercadopago.SDK(os.getenv('MP_ACCESS_TOKEN'))
 
         ids_carrito = request.session.get('carrito', [])
         if not ids_carrito:
