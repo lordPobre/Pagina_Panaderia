@@ -14,3 +14,5 @@ env/
 
 # Archivos de sistema
 .DS_Store
+
+ngrok.exe

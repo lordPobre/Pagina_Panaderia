@@ -229,6 +229,7 @@ def pago_exitoso(request):
             detalle_productos=detalle,
             pagado=pago_confirmado,     
             carrito_data=conteo_productos,
+            fecha_retiro=datos_cliente.get('fecha_retiro'), # Capturamos la fecha
             hora_retiro=datos_cliente.get('hora_retiro')
         )
 
@@ -269,6 +270,7 @@ def pago_exitoso(request):
 
         request.session['carrito'] = []
         request.session['datos_cliente'] = {} 
+        request.session['orden_activa'] = nueva_orden.id 
         request.session.modified = True
         
         return render(request, 'pago_exitoso.html', {'orden': nueva_orden})
@@ -335,3 +337,38 @@ def dejar_resena(request, producto_id):
         )
         return redirect('producto_detalle', producto_id=producto.id)
     return redirect('home')
+
+# core/views.py
+
+def catalogo(request):
+    # Capturamos lo que viene después de '?categoria='
+    categoria_slug = request.GET.get('categoria')
+    
+    if categoria_slug:
+        # Filtramos los productos que coincidan exactamente con la categoría
+        productos = Producto.objects.filter(categoria__iexact=categoria_slug)
+    else:
+        # Si no hay filtro, mostramos el catálogo completo
+        productos = Producto.objects.all()
+
+    return render(request, 'catalogo.html', {
+        'productos': productos,
+        'categoria_seleccionada': categoria_slug # Pasamos el nombre para el banner
+    })
+
+def rastreo_pedido(request, orden_id):
+    orden = get_object_or_404(Orden, id=orden_id)
+    
+    # Asignamos un porcentaje de progreso a cada estado
+    pesos = {
+        'recibido': 15,
+        'preparando': 50,
+        'listo': 85,
+        'entregado': 100
+    }
+    progreso = pesos.get(orden.estado, 15)
+
+    return render(request, 'rastreo.html', {
+        'orden': orden,
+        'progreso': progreso
+    })

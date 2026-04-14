@@ -24,6 +24,8 @@ class Orden(models.Model):
     direccion = models.TextField()
     total = models.IntegerField()
     fecha = models.DateTimeField(auto_now_add=True)
+    fecha_retiro = models.DateField(null=True, blank=True, verbose_name="Fecha de Retiro")
+    hora_retiro = models.TimeField(null=True, blank=True, verbose_name="Hora de Retiro")
     pagado = models.BooleanField(default=False)
     carrito_data = models.JSONField(default=dict, blank=True, null=True)
     detalle_productos = models.TextField() 
@@ -41,6 +43,16 @@ class Orden(models.Model):
         ('presencial', 'Pago en Local'),
     ]
     metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='mercadopago')
+
+    ESTADOS_PEDIDO = [
+        ('recibido', '📝 Recibido'),
+        ('preparando', '👩‍🍳 En Preparación'),
+        ('listo', '🛍️ Listo / En Camino'),
+        ('entregado', '✅ Entregado')
+    ]
+    
+    # Añade este campo a la clase Orden
+    estado = models.CharField(max_length=20, choices=ESTADOS_PEDIDO, default='recibido')
 
     class Meta:
         verbose_name_plural = "Órdenes"

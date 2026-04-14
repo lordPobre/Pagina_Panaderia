@@ -53,36 +53,20 @@
                             </div>
                         </div>
 
-                        <div id="seccion_hora_retiro" class="mb-3" style="display: none;">
-                            <label class="form-label fw-bold">¿A qué hora vendrás a retirar?</label>
-                            <select name="hora_retiro" id="hora_retiro_select" class="form-select">
-                                <option value="" disabled selected>Selecciona un horario disponible...</option>
-                                
-                                <optgroup label="Jornada Mañana">
-                                    <option value="10:00">10:00 hrs</option>
-                                    <option value="10:30">10:30 hrs</option>
-                                    <option value="11:00">11:00 hrs</option>
-                                    <option value="11:30">11:30 hrs</option>
-                                    <option value="12:00">12:00 hrs</option>
-                                    <option value="12:30">12:30 hrs</option>
-                                    <option value="13:00">13:00 hrs</option>
-                                    <option value="13:30">13:30 hrs</option>
-                                    <option value="14:00">14:00 hrs</option>
-                                </optgroup>
-                                
-                                <optgroup label="Jornada Tarde">
-                                    <option value="15:30">15:30 hrs</option>
-                                    <option value="16:00">16:00 hrs</option>
-                                    <option value="16:30">16:30 hrs</option>
-                                    <option value="17:00">17:00 hrs</option>
-                                    <option value="17:30">17:30 hrs</option>
-                                    <option value="18:00">18:00 hrs</option>
-                                    <option value="18:30">18:30 hrs</option>
-                                    <option value="19:00">19:00 hrs</option>
-                                </optgroup>
-                            </select>
-                            <div class="form-text text-muted">
-                                <i class="bi bi-info-circle"></i> Nuestro horario de colación es de 14:00 a 15:30 hrs.
+                        <div id="seccion_retiro" class="mb-3" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold text-primary">¿Qué día vendrás?</label>
+                                    <input type="date" name="fecha_retiro" id="id_fecha_retiro" class="form-control rounded-3" 
+                                           min="{% now 'Y-m-d' %}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold text-primary">¿A qué hora?</label>
+                                    <input type="time" name="hora_retiro" id="id_hora_retiro" class="form-control rounded-3">
+                                    <div class="form-text text-muted mt-1 small">
+                                        <i class="bi bi-info-circle"></i> Nuestro horario de colación es de 14:00 a 15:30 hrs.
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -136,9 +120,13 @@
         const campoDireccion = document.getElementById('campo_direccion');
         const infoRetiro = document.getElementById('info_retiro');
         
-        // Elementos de la Hora de Retiro
-        const seccionHora = document.getElementById('seccion_hora_retiro');
-        const selectHora = document.getElementById('hora_retiro_select');
+        // Nuevos Elementos de Fecha y Hora
+        const seccionRetiro = document.getElementById('seccion_retiro');
+        const inputFechaRetiro = document.getElementById('id_fecha_retiro');
+        const inputHoraRetiro = document.getElementById('id_hora_retiro');
+        
+        // Establecer la fecha de hoy por defecto al cargar la página
+        inputFechaRetiro.valueAsDate = new Date();
         
         const wrapperPagoPresencial = document.getElementById('wrapper_pago_presencial');
         const radioPagoOnline = document.getElementById('pago_online');
@@ -147,22 +135,35 @@
         radiosEntrega.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value === 'retiro') {
+                    // Ocultar Dirección
                     wrapperDireccion.classList.add('d-none');
                     campoDireccion.required = false;
+                    
+                    // Mostrar Retiro
                     infoRetiro.classList.remove('d-none');
-                    seccionHora.style.display = 'block';
-                    selectHora.required = true;
+                    seccionRetiro.style.display = 'block';
+                    inputFechaRetiro.required = true;
+                    inputHoraRetiro.required = true;
+                    
+                    // Mostrar Pago Presencial
                     wrapperPagoPresencial.classList.remove('d-none');
                 } else {
-
+                    // Mostrar Dirección
                     wrapperDireccion.classList.remove('d-none');
                     campoDireccion.required = true;
+                    
+                    // Ocultar Retiro
                     infoRetiro.classList.add('d-none');
-                    seccionHora.style.display = 'none';
-                    selectHora.required = false;
-                    selectHora.value = "";
+                    seccionRetiro.style.display = 'none';
+                    inputFechaRetiro.required = false;
+                    inputHoraRetiro.required = false;
+                    inputHoraRetiro.value = "";
+                    
+                    // Ocultar Pago Presencial y forzar MercadoPago
                     wrapperPagoPresencial.classList.add('d-none');
                     radioPagoOnline.checked = true;
+                    
+                    // Restaurar botón
                     btnSubmit.innerText = "Continuar al Pago";
                     btnSubmit.classList.replace('btn-success', 'btn-brand'); 
                 }

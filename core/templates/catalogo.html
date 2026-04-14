@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<header class="position-relative text-center text-white d-flex align-items-center justify-content-center mb-5" 
+        style="background-image: url('https://images.unsplash.com/photo-1483695028939-5bb13f8648b0?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center; min-height: 40vh;">
+    
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(44, 62, 80, 0.75); z-index: 1;"></div>
+    
+    <div class="container position-relative" style="z-index: 2;">
+        {% if categoria_seleccionada %}
+            <span class="badge bg-warning text-dark mb-2 px-3 py-1 fw-bold" style="border-radius: 20px;">CATEGORÍA</span>
+            <h1 class="display-3 fw-bold mb-2 text-capitalize" style="font-family: 'Poppins', sans-serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">
+                {{ categoria_seleccionada }}
+            </h1>
+            <p class="lead fw-light">Nuestras mejores preparaciones de {{ categoria_seleccionada|lower }} recién horneadas.</p>
+        {% else %}
+            <h1 class="display-3 fw-bold mb-2" style="font-family: 'Poppins', sans-serif; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">
+                Catálogo Completo
+            </h1>
+            <p class="lead fw-light">Explora toda la tradición de La Jovita en un solo lugar.</p>
+        {% endif %}
+    </div>
+</header>
+
+<div class="container mb-5">
+    <div class="row">
+        {% for p in productos %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 tarjeta-producto shadow-sm border-0" style="border-radius: 16px;">
+                
+                <a href="{% url 'producto_detalle' p.id %}" class="text-decoration-none">
+                    {% if p.imagen %}
+                        <img src="{{ p.imagen.url }}" class="card-img-top" style="height: 200px; object-fit: cover; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                    {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                            <i class="bi bi-camera text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                    {% endif %}
+                </a>
+                
+                <div class="card-body d-flex flex-column text-center p-4">
+                    <a href="{% url 'producto_detalle' p.id %}" class="text-decoration-none">
+                        <h5 class="tarjeta-titulo fw-bold text-dark mb-1">{{ p.nombre }}</h5>
+                    </a>
+                    
+                    <p class="text-muted text-uppercase fw-semibold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">{{ p.categoria }}</p>
+                    
+                    <h4 class="tarjeta-precio text-success fw-bold mb-4">${{ p.precio }}</h4>
+                    
+                    <div class="mt-auto">
+                        <form action="{% url 'agregar' p.id %}" method="POST">
+                            {% csrf_token %}
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light border-0 text-muted" style="font-size: 0.8rem;">Cant.</span>
+                                    <input type="number" name="cantidad" class="form-control text-center bg-light border-0 fw-bold" value="1" min="1" max="{{ p.stock }}">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-catalogo w-100 shadow-sm" {% if p.stock == 0 %}disabled{% endif %} style="border-radius: 8px;">
+                                <i class="bi bi-cart-plus me-1"></i> Agregar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

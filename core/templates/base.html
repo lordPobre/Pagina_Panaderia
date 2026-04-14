@@ -63,13 +63,13 @@
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link fw-semibold px-2" href="{% url 'filtrar_categoria' 'Empanadas' %}">Empanadas</a>
+                    <a class="nav-link fw-semibold px-2" href="{% url 'catalogo' %}?categoria=Empanadas">Empanadas</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-semibold px-2" href="{% url 'filtrar_categoria' 'Panadería' %}">Panadería</a>
+                    <a class="nav-link fw-semibold px-2" href="{% url 'catalogo' %}?categoria=Panadería">Panadería</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-semibold px-2" href="{% url 'filtrar_categoria' 'Pastelería' %}">Pastelería</a>
+                    <a class="nav-link fw-semibold px-2" href="{% url 'catalogo' %}?categoria=Pastelería">Pastelería</a>
                 </li>
 
                 <li class="nav-item d-none d-lg-block text-muted">|</li>
@@ -109,9 +109,9 @@
 
             <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mt-3 mb-4">
                 <h5 class="text-uppercase mb-4 fw-bold text-warning">Productos</h5>
-                <p><a href="{% url 'filtrar_categoria' 'Empanadas' %}" class="text-white-50 text-decoration-none">Empanadas</a></p>
-                <p><a href="{% url 'filtrar_categoria' 'Panadería' %}" class="text-white-50 text-decoration-none">Panadería</a></p>
-                <p><a href="{% url 'filtrar_categoria' 'Pastelería' %}" class="text-white-50 text-decoration-none">Pastelería</a></p>
+                <p><a href="{% url 'catalogo' %}?categoria=Empanadas" class="text-white-50 text-decoration-none">Empanadas</a></p>
+                <p><a href="{% url 'catalogo' %}?categoria=Panadería" class="text-white-50 text-decoration-none">Panadería</a></p>
+                <p><a href="{% url 'catalogo' %}?categoria=Pastelería" class="text-white-50 text-decoration-none">Pastelería</a></p>
                 <p><a href="#" class="text-white-50 text-decoration-none">Ofertas</a></p>
             </div>
 
@@ -151,7 +151,7 @@
             
             <div class="col-md-7 col-lg-8">
                 <p class="text-md-start text-center mb-0 text-white-50">
-                    © 2026 <strong class="text-white">Panadería Paula</strong>. Todos los derechos reservados.
+                    © 2026 <strong class="text-white">Panadería La Jovita</strong>. Todos los derechos reservados.
                 </p>
             </div>
             
@@ -166,7 +166,30 @@
         </div>
     </div>
 </footer>
+{% if request.session.orden_activa %}
+    <div class="position-fixed" style="bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1050;">
+        <a href="{% url 'rastreo_pedido' request.session.orden_activa %}" 
+           class="btn btn-dark text-white rounded-pill shadow-lg px-4 py-2 d-flex align-items-center border border-secondary"
+           style="background-color: #2c3e50; transition: transform 0.3s; text-decoration: none;">
+            
+            <div class="spinner-grow spinner-grow-sm text-success me-2" role="status" style="width: 0.8rem; height: 0.8rem;"></div>
+            
+            <span class="fw-bold" style="font-family: 'Poppins', sans-serif; font-size: 0.95rem;">
+                Viendo Pedido #{{ request.session.orden_activa }}
+            </span>
+            
+            <i class="bi bi-chevron-right ms-3 text-warning"></i>
+        </a>
+    </div>
 
+    <style>
+        /* Pequeño efecto para que el botón flote suavemente al pasar el mouse */
+        .btn-dark:hover {
+            transform: scale(1.05);
+            background-color: #1a252f !important;
+        }
+    </style>
+{% endif %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

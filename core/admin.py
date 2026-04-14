@@ -17,12 +17,12 @@ class ProductoAdmin(admin.ModelAdmin):
 
 @admin.register(Orden)
 class OrdenAdmin(admin.ModelAdmin):
-    list_display = ('id_con_estilo', 'fecha', 'cliente_info', 'metodo_entrega', 'entrega_detalle', 'pago_status', 'total_formateado', 'contactar_whatsapp')
+    list_display = ('id_con_estilo', 'fecha', 'fecha_retiro', 'hora_retiro', 'cliente_info', 'metodo_entrega', 'entrega_detalle', 'pago_status','estado', 'total_formateado', 'contactar_whatsapp')
     list_filter = ('entregado', 'pagado', 'metodo_entrega', 'fecha', 'metodo_pago')
     search_fields = ('nombre', 'apellido', 'email', 'telefono')
     fieldsets = (
         ('Estado de la Venta', {
-            'fields': ('pagado', 'entregado', 'total') 
+            'fields': ('estado', 'pagado', 'entregado', 'total')
         }),
         ('Información del Cliente', {
             'fields': (('nombre', 'apellido'), 'email', 'telefono')

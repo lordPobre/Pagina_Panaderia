@@ -52,6 +52,11 @@
                 </tr>
                 {% endfor %}
             </table>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{{ dominio }}{% url 'rastreo_pedido' orden.id %}" style="background-color: #2c3e50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Rastrear Pedido
+                </a>
+            </div>
         </div>
         {% endif %}
         <div style="background-color: #2c3e50; color: #ffffff; padding: 30px 40px; margin: 10px 40px 40px; border-radius: 12px;">
@@ -65,8 +70,10 @@
                 
                 {% if orden.metodo_entrega == 'retiro' %}
                 <tr>
-                    <td style="color: #a0aec0; padding-bottom: 12px;">Hora:</td>
-                    <td style="font-weight: bold; padding-bottom: 12px; color: #f1c40f; font-size: 16px;">{{ orden.hora_retiro }} hrs</td>
+                    <td style="color: #a0aec0; padding-bottom: 12px;">Cita para Retiro:</td>
+                    <td style="font-weight: bold; padding-bottom: 12px; color: #f1c40f;">
+                        {{ orden.fecha_retiro|date:"d/m/Y" }} a las {{ orden.hora_retiro|time:"H:i" }} hrs
+                    </td>
                 </tr>
                 <tr>
                     <td style="color: #a0aec0; padding-bottom: 12px;">Dirección:</td>

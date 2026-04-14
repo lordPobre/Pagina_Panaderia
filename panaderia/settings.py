@@ -10,8 +10,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',
+    'https://85aa-179-60-77-168.ngrok-free.app' # O la URL específica que te dio el error
+]
 
 INSTALLED_APPS = [
     'jazzmin',
