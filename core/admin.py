@@ -1,12 +1,23 @@
 import csv
+import json
 from urllib.parse import quote
-from django.http import HttpResponse
+
 from django.contrib import admin
+from django.http import HttpResponse
+from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from django.template.loader import render_to_string
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncDate, TruncMonth
-import json
-from .models import Producto, Orden, GananciaDiaria, GananciaMensual,Resena
+from django.utils.translation import gettext_lazy as _
+
+from .models import Producto, Orden, GananciaDiaria, GananciaMensual, Resena, OrdenActiva, OrdenHistorial,ImagenProducto
+
+class ImagenProductoInline(admin.TabularInline):
+    model = ImagenProducto
+    extra = 3  
+    fields = ('imagen', 'orden')
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
@@ -14,190 +25,166 @@ class ProductoAdmin(admin.ModelAdmin):
     list_editable = ('precio_anterior', 'precio', 'stock', 'es_oferta') 
     list_filter = ('categoria', 'es_oferta')
     search_fields = ('nombre',)
+    inlines = [ImagenProductoInline]
 
-@admin.register(Orden)
-class OrdenAdmin(admin.ModelAdmin):
-    list_display = ('id_con_estilo', 'fecha', 'fecha_retiro', 'hora_retiro', 'cliente_info', 'metodo_entrega', 'entrega_detalle', 'pago_status','estado', 'total_formateado', 'contactar_whatsapp')
-    list_filter = ('entregado', 'pagado', 'metodo_entrega', 'fecha', 'metodo_pago')
-    search_fields = ('nombre', 'apellido', 'email', 'telefono')
+class BaseOrdenAdmin(admin.ModelAdmin):
+    """Clase maestra que centraliza toda la lógica visual y de acciones"""
+    
+    list_display = (
+        'id_con_estilo', 'fecha_pedido_formateada', 'fecha_retiro', 
+        'entrega_detalle', 'cliente_info', 'pago_status', 
+        'estado', 'total_formateado', 'contactar_whatsapp'
+    )
+    list_filter = ('estado', 'pagado', 'metodo_entrega', 'fecha_retiro', 'fecha')
+    search_fields = ('id', 'nombre', 'apellido', 'email', 'telefono')
+    readonly_fields = ('fecha', 'detalle_productos', 'total')
+    date_hierarchy = 'fecha_retiro'
+    ordering = ('-fecha',)
+    actions = [
+        'marcar_como_preparando', 
+        'marcar_como_listo', 
+        'marcar_como_entregado', 
+        'marcar_como_pagado', 
+        'exportar_a_csv'
+    ]
+
     fieldsets = (
         ('Estado de la Venta', {
-            'fields': ('estado', 'pagado', 'entregado', 'total')
+            'fields': ('estado', 'pagado', 'entregado', 'total', 'fecha')
         }),
         ('Información del Cliente', {
             'fields': (('nombre', 'apellido'), 'email', 'telefono')
         }),
         ('Detalles de Entrega y Productos', {
-            'fields': ('metodo_entrega', 'metodo_pago','hora_retiro', 'direccion', 'detalle_productos'),
-            'classes': ('collapse',),
+            'fields': ('metodo_entrega', 'metodo_pago', 'hora_retiro', 'fecha_retiro', 'direccion', 'detalle_productos'),
         }),
     )
 
-    def get_readonly_fields(self, request, obj=None):
-        if obj:  
-            return ('nombre', 'apellido', 'email', 'telefono', 'direccion', 'metodo_entrega', 'metodo_pago', 'hora_retiro', 'total', 'detalle_productos')
-        return ()
+    @admin.action(description="📦 Marcar como: En Preparación")
+    def marcar_como_preparando(self, request, queryset):
+        queryset.update(estado='preparando')
+        self.message_user(request, "Órdenes actualizadas a: En Preparación")
+
+    @admin.action(description="✅ Marcar como: Listo para entrega")
+    def marcar_como_listo(self, request, queryset):
+        queryset.update(estado='listo')
+        self.message_user(request, "Órdenes actualizadas a: Listas")
+
+    @admin.action(description="🏁 Marcar como: Entregado")
+    def marcar_como_entregado(self, request, queryset):
+        queryset.update(estado='entregado', entregado=True)
+        self.message_user(request, "Órdenes marcadas como entregadas y movidas al historial.")
+
+    @admin.action(description="💰 Marcar como: Pagado")
+    def marcar_como_pagado(self, request, queryset):
+        queryset.update(pagado=True)
+        self.message_user(request, "Órdenes marcadas como pagadas.")
+
+    @admin.display(description='Fecha Pedido', ordering='fecha')
+    def fecha_pedido_formateada(self, obj):
+        if obj.fecha:
+            return timezone.localtime(obj.fecha).strftime("%d/%m/%Y %H:%M")
+        return "-"
 
     def id_con_estilo(self, obj):
-        return format_html('<span style="font-weight: bold;">#{}</span>', obj.id)
-    id_con_estilo.short_description = "Orden"
+        return format_html('<span style="font-weight: bold; color: #2980b9;">#{}</span>', obj.id)
 
     def cliente_info(self, obj):
         return format_html('{} {}<br><small class="text-muted">{}</small>', 
                            obj.nombre, obj.apellido, obj.telefono)
-    cliente_info.short_description = "Cliente"
 
     def pago_status(self, obj):
         if obj.pagado:
-            return format_html('<span class="badge bg-success">{}</span>', 'PAGADO')
-        return format_html('<span class="badge bg-danger">{}</span>', 'POR COBRAR')
-    pago_status.short_description = "Pago"
-
-    def entrega_status(self, obj):
-        if obj.entregado:
-            return format_html('<span class="badge bg-info text-dark"><i class="fas fa-check-double me-1"></i> {}</span>', 'ENTREGADO')
-        return format_html('<span class="badge bg-warning text-dark"><i class="fas fa-box-open me-1"></i> {}</span>', 'PREPARANDO')
-    entrega_status.short_description = "Estado Entrega"
+            return mark_safe('<span class="badge bg-success" style="padding: 5px 10px;">PAGADO</span>')
+        return mark_safe('<span class="badge bg-danger" style="padding: 5px 10px;">POR COBRAR</span>')
 
     def entrega_detalle(self, obj):
         if obj.metodo_entrega == 'retiro' and obj.hora_retiro:
             return format_html(
-                '<span class="badge bg-purple text-white" style="background-color: #6f42c1;">'
-                '<i class="fas fa-clock me-1"></i> Retira a las: {}</span>',
+                '<div style="background-color: #6f42c1; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; display: inline-block;">'
+                '<i class="fas fa-clock"></i> {}</div>',
                 obj.hora_retiro.strftime("%H:%M")
             )
-        return "N/A (Despacho)"
-    entrega_detalle.short_description = "Detalle Retiro"
-    
+        return mark_safe('<span class="text-muted">Despacho</span>')
+
     def total_formateado(self, obj):
-        return f"${obj.total:,}".replace(",", ".")
+        if obj.total is not None:
+            valor_con_puntos = "{:,}".format(int(obj.total)).replace(",", ".")
+            return format_html('<strong>${}</strong>', valor_con_puntos)
+        return "$0"
     total_formateado.short_description = "Total"
-    actions = ['marcar_como_pagado', 'marcar_como_entregado', 'exportar_a_csv']
-
-    def marcar_como_pagado(self, request, queryset):
-        contador = 0
-        for orden in queryset:
-            if not orden.pagado:
-                orden.pagado = True
-                orden.save() 
-                contador += 1
-        
-        self.message_user(request, f"Se han marcado {contador} órdenes como pagadas y se ha descontado el stock.")
-    marcar_como_pagado.short_description = "Marcar seleccionados como PAGADOS"
-
-    def marcar_como_entregado(self, request, queryset):
-        queryset.update(entregado=True)
-    marcar_como_entregado.short_description = "Marcar seleccionados como ENTREGADOS"
 
     def contactar_whatsapp(self, obj):
-        telefono_limpio = str(obj.telefono).replace(" ", "").replace("+", "")
-
-        if not telefono_limpio.startswith("56"):
-            telefono_limpio = "56" + telefono_limpio
-
-        mensaje = f"Hola {obj.nombre}, te escribimos de Panadería La Jovita 🥖. ¡Tu pedido #{obj.id} ya está listo para ser retirado en el local!"
-        mensaje_codificado = quote(mensaje)
-        
-        url = f"https://wa.me/{telefono_limpio}?text={mensaje_codificado}"
-
+        tel = str(obj.telefono).replace(" ", "").replace("+", "")
+        if not tel.startswith("56"): tel = "56" + tel
+        msj = quote(f"Hola {obj.nombre}, ¡tu pedido #{obj.id} de La Jovita ya está listo! 🥖")
+        url = f"https://wa.me/{tel}?text={msj}"
         return format_html(
-            '<a class="btn btn-sm text-white shadow-sm" href="{}" target="_blank" style="background-color: #25D366; border-radius: 20px;">'
-            '<i class="fab fa-whatsapp me-1"></i> Avisar'
-            '</a>',
-            url
+            '<a class="btn btn-sm text-white shadow-sm" href="{}" target="_blank" style="background-color: #25D366; border-radius: 20px; padding: 2px 12px; font-size: 11px; text-decoration: none;">'
+            '<i class="fab fa-whatsapp"></i> Avisar</a>', url
         )
-    contactar_whatsapp.short_description = "Aviso"
 
     def exportar_a_csv(self, request, queryset):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="reporte_ventas.csv"'
         response.write(u'\ufeff'.encode('utf8')) 
-
         writer = csv.writer(response, delimiter=';') 
-        writer.writerow(['ID Orden', 'Fecha', 'Cliente', 'Email', 'Teléfono', 'Método', 'Total Pagado', 'Estado', 'Entregado', 'Productos'])
-
-        for orden in queryset:
-            fecha_str = orden.fecha.strftime("%d/%m/%Y %H:%M")
-            estado_pago = "PAGADO" if orden.pagado else "POR COBRAR"
-            estado_entrega = "SÍ" if orden.entregado else "NO"
-            
-            writer.writerow([
-                orden.id,
-                fecha_str,
-                f"{orden.nombre} {orden.apellido}",
-                orden.email,
-                orden.telefono,
-                orden.get_metodo_entrega_display(),
-                orden.total,
-                estado_pago,
-                estado_entrega,
-                orden.detalle_productos
-            ])
-            
+        writer.writerow(['ID', 'Fecha', 'Cliente', 'Método', 'Total', 'Pago', 'Estado', 'Productos'])
+        for o in queryset:
+            writer.writerow([o.id, o.fecha.strftime("%d/%m/%Y %H:%M"), f"{o.nombre} {o.apellido}", 
+                             o.get_metodo_entrega_display(), o.total, "Pagado" if o.pagado else "Pendiente", 
+                             o.estado, o.detalle_productos])
         return response
-    exportar_a_csv.short_description = "📥 Descargar reporte en Excel (CSV)"
+    exportar_a_csv.short_description = "📥 Exportar Excel (CSV)"
+
+@admin.register(OrdenActiva)
+class OrdenActivaAdmin(BaseOrdenAdmin):
+    def get_queryset(self, request):
+        return super().get_queryset(request).exclude(estado='entregado')
+
+@admin.register(OrdenHistorial)
+class OrdenHistorialAdmin(BaseOrdenAdmin):
+    actions = ['exportar_a_csv', 'marcar_como_pagado']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(estado='entregado')
+
+    def has_add_permission(self, request): return False
 
 @admin.register(GananciaDiaria)
 class GananciaDiariaAdmin(admin.ModelAdmin):
     change_list_template = 'admin/ganancias_diarias.html' 
-
-    def has_add_permission(self, request):
-        return False
-    def has_delete_permission(self, request, obj=None):
-        return False
-
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
     def changelist_view(self, request, extra_context=None):
         qs = Orden.objects.filter(pagado=True)
-
-        ventas_por_dia = (
-            qs.annotate(dia=TruncDate('fecha'))
-            .values('dia')
-            .annotate(total_ganado=Sum('total'), cantidad_ordenes=Count('id'))
-            .order_by('-dia')
-        )
-        datos_grafico = list(ventas_por_dia[:7])
-        datos_grafico.reverse() 
-        fechas_str = [v['dia'].strftime("%d/%m/%Y") for v in datos_grafico if v['dia']]
-        totales_num = [float(v['total_ganado']) for v in datos_grafico if v['total_ganado']]
-
-        extra_context = extra_context or {
-            "ventas_por_dia": ventas_por_dia,
-            "fechas_json": json.dumps(fechas_str),
-            "totales_json": json.dumps(totales_num),
+        ventas = qs.annotate(dia=TruncDate('fecha')).values('dia').annotate(total=Sum('total'), cant=Count('id')).order_by('-dia')
+        grafico = list(ventas[:7])
+        grafico.reverse()
+        context = {
+            "ventas_por_dia": ventas,
+            "fechas_json": json.dumps([v['dia'].strftime("%d/%m") for v in grafico if v['dia']]),
+            "totales_json": json.dumps([float(v['total']) for v in grafico if v['total']]),
         }
-
-        return super().changelist_view(request, extra_context=extra_context)
+        return super().changelist_view(request, extra_context={**extra_context, **context} if extra_context else context)
 
 @admin.register(GananciaMensual)
 class GananciaMensualAdmin(admin.ModelAdmin):
     change_list_template = 'admin/ganancias_mensuales.html'
-    
-    def has_add_permission(self, request):
-        return False
-    def has_delete_permission(self, request, obj=None):
-        return False
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
 
     def changelist_view(self, request, extra_context=None):
         qs = Orden.objects.filter(pagado=True)
-
-        ventas_por_mes = (
-            qs.annotate(mes=TruncMonth('fecha'))
-            .values('mes')
-            .annotate(total_ganado=Sum('total'), cantidad_ordenes=Count('id'))
-            .order_by('-mes')
-        )
-        datos_grafico = list(ventas_por_mes[:12])
-        datos_grafico.reverse()
-        fechas_str = [v['mes'].strftime("%m/%Y") for v in datos_grafico if v['mes']]
-        totales_num = [float(v['total_ganado']) for v in datos_grafico if v['total_ganado']]
-
-        extra_context = extra_context or {
-            "ventas_por_mes": ventas_por_mes,
-            "fechas_json": json.dumps(fechas_str),
-            "totales_json": json.dumps(totales_num),
+        ventas = qs.annotate(mes=TruncMonth('fecha')).values('mes').annotate(total=Sum('total'), cant=Count('id')).order_by('-mes')
+        grafico = list(ventas[:12])
+        grafico.reverse()
+        context = {
+            "ventas_por_mes": ventas,
+            "fechas_json": json.dumps([v['mes'].strftime("%m/%Y") for v in grafico if v['mes']]),
+            "totales_json": json.dumps([float(v['total']) for v in grafico if v['total']]),
         }
-
-        return super().changelist_view(request, extra_context=extra_context)
+        return super().changelist_view(request, extra_context={**extra_context, **context} if extra_context else context)
 
 @admin.register(Resena)
 class ResenaAdmin(admin.ModelAdmin):

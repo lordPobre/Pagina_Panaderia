@@ -1,7 +1,7 @@
 from django.db import models
 
 class Producto(models.Model):
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=200)
     categoria = models.CharField(max_length=50, choices=[
         ('Panadería', 'Panadería'),
         ('Pastelería', 'Pastelería'),
@@ -15,6 +15,16 @@ class Producto(models.Model):
 
     def __str__(self):
         return self.nombre
+
+class ImagenProducto(models.Model):
+    producto = models.ForeignKey(Producto, related_name='galeria', on_delete=models.CASCADE)
+    imagen = models.ImageField(upload_to='productos/galeria/', verbose_name="Foto de Galería")
+    orden = models.PositiveIntegerField(default=0, help_text="Para decidir cuál sale primero")
+
+    class Meta:
+        verbose_name = "Imagen de Galería"
+        verbose_name_plural = "Galería de Fotos"
+        ordering = ['orden']
 
 class Orden(models.Model):
     nombre = models.CharField(max_length=100)
@@ -85,7 +95,18 @@ class Orden(models.Model):
     def __str__(self):
         return f"Orden #{self.id} - {self.nombre} {self.apellido}"
 
-# core/models.py
+class OrdenActiva(Orden):
+    class Meta:
+        proxy = True
+        verbose_name = "Orden Pendiente"
+        verbose_name_plural = "📦 Órdenes Pendientes"
+
+class OrdenHistorial(Orden):
+    class Meta:
+        proxy = True
+        verbose_name = "Orden Finalizada"
+        verbose_name_plural = "📜 Historial de Órdenes"
+
 class Resena(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='resenas')
     nombre_cliente = models.CharField(max_length=100, verbose_name="Tu Nombre")

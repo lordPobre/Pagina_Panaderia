@@ -32,6 +32,12 @@
             </div>
         </div>
 
+        <div style="text-align: center; margin: 0 40px 30px;">
+            <a href="{{ dominio }}{% url 'rastreo_pedido' orden.id %}" style="background-color: #27ae60; color: white; padding: 12px 30px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);">
+                📍 Rastrear Pedido en Tiempo Real
+            </a>
+        </div>
+
         {% if productos_comprados %}
         <div style="padding: 20px 30px; background-color: #fff9f0; border-radius: 12px; margin: 0 40px 30px; text-align: center; border: 1px dashed #f39c12;">
             <h4 style="color: #2c3e50; margin: 0 0 10px 0; font-size: 16px;">¿Qué te pareció tu pedido? ⭐</h4>
@@ -52,13 +58,9 @@
                 </tr>
                 {% endfor %}
             </table>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="{{ dominio }}{% url 'rastreo_pedido' orden.id %}" style="background-color: #2c3e50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                    Rastrear Pedido
-                </a>
-            </div>
         </div>
         {% endif %}
+
         <div style="background-color: #2c3e50; color: #ffffff; padding: 30px 40px; margin: 10px 40px 40px; border-radius: 12px;">
             <h4 style="margin: 0 0 20px 0; color: #f39c12; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Información de Entrega</h4>
 
@@ -69,32 +71,23 @@
                 </tr>
                 
                 {% if orden.metodo_entrega == 'retiro' %}
-                <tr>
-                    <td style="color: #a0aec0; padding-bottom: 12px;">Cita para Retiro:</td>
-                    <td style="font-weight: bold; padding-bottom: 12px; color: #f1c40f;">
-                        {{ orden.fecha_retiro|date:"d/m/Y" }} a las {{ orden.hora_retiro|time:"H:i" }} hrs
-                    </td>
-                </tr>
-                <tr>
-                    <td style="color: #a0aec0; padding-bottom: 12px;">Dirección:</td>
-                    <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;">Av. Principal #123, Viña del Mar</td>
-                </tr>
+                    <tr>
+                        <td style="color: #a0aec0; padding-bottom: 12px;">Cita para Retiro:</td>
+                        <td style="font-weight: bold; padding-bottom: 12px; color: #f1c40f;">
+                            {% if orden.fecha_retiro %}{{ orden.fecha_retiro|date:"d/m/Y" }}{% else %}Hoy{% endif %}
+                            {% if orden.hora_retiro %} a las {{ orden.hora_retiro|time:"H:i" }} hrs{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color: #a0aec0; padding-bottom: 12px;">Dirección:</td>
+                        <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;">Av. Principal #123, Viña del Mar</td>
+                    </tr>
                 {% else %}
-                <tr>
-                    <td style="color: #a0aec0; padding-bottom: 12px;">Destino:</td>
-                    <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;">{{ orden.direccion }}</td>
-                </tr>
+                    <tr>
+                        <td style="color: #a0aec0; padding-bottom: 12px;">Destino:</td>
+                        <td style="font-weight: 600; padding-bottom: 12px; color: #ffffff;">{{ orden.direccion }}</td>
+                    </tr>
                 {% endif %}
-                
-                <tr>
-                    <td style="color: #a0aec0;">Pago:</td>
-                    <td style="font-weight: 600; color: #ffffff;">
-                        {{ orden.get_metodo_pago_display }}
-                        {% if orden.pagado %}
-                            <span style="color: #2ecc71; font-size: 13px; margin-left: 5px;">(Confirmado)</span>
-                        {% endif %}
-                    </td>
-                </tr>
             </table>
         </div>
 

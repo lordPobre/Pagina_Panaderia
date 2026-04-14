@@ -13,14 +13,24 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from .models import Producto,Orden,Resena
+from django.shortcuts import render
+from .models import Producto
 
 def home(request):
-    productos = Producto.objects.filter(es_oferta=False)
-    ofertas = Producto.objects.filter(es_oferta=True)
+
+    todas_las_ofertas = Producto.objects.filter(es_oferta=True).order_by('-id')
+    oferta_principal = todas_las_ofertas.first()
+    ofertas_secundarias = list(todas_las_ofertas[1:3])
     
+    if len(ofertas_secundarias) < 2:
+        extra = Producto.objects.filter(es_oferta=False).order_by('?')[:2 - len(ofertas_secundarias)]
+        ofertas_secundarias.extend(list(extra))
+
     return render(request, 'index.html', {
-        'productos': productos,
-        'ofertas': ofertas
+        'oferta_principal': oferta_principal,
+        'destacado_1': ofertas_secundarias[0] if len(ofertas_secundarias) > 0 else None,
+        'destacado_2': ofertas_secundarias[1] if len(ofertas_secundarias) > 1 else None,
+        'todas_las_ofertas': todas_las_ofertas, # <-- Esto es lo que activa el carrusel de abajo
     })
 
 def nosotros(request):
@@ -128,8 +138,11 @@ def procesar_pago(request):
         telefono = request.POST.get('telefono')
         direccion = request.POST.get('direccion')
         metodo = request.POST.get('metodo_entrega')
+        fecha_retiro = request.POST.get('fecha_retiro') if metodo == 'retiro' else None
         hora_retiro = request.POST.get('hora_retiro') if metodo == 'retiro' else None
+        
         metodo_pago = request.POST.get('metodo_pago')
+        
         datos = {
             'nombre': nombre,
             'apellido': apellido,
@@ -137,6 +150,7 @@ def procesar_pago(request):
             'telefono': telefono,
             'direccion': direccion,
             'metodo_entrega': metodo,
+            'fecha_retiro': fecha_retiro, # --- AGREGADO ---
             'hora_retiro': hora_retiro, 
             'metodo_pago': metodo_pago
         }
@@ -217,6 +231,12 @@ def pago_exitoso(request):
         direccion_final = datos_cliente.get('direccion', '') if datos_cliente.get('metodo_entrega') == 'despacho' else "Retiro en local"
         pago_confirmado = (datos_cliente.get('metodo_pago') == 'mercadopago')
 
+        fecha_ret = datos_cliente.get('fecha_retiro')
+        hora_ret = datos_cliente.get('hora_retiro')
+        
+        if not fecha_ret: fecha_ret = None
+        if not hora_ret: hora_ret = None
+
         nueva_orden = Orden.objects.create(
             nombre=datos_cliente['nombre'],
             apellido=datos_cliente['apellido'],
@@ -229,17 +249,19 @@ def pago_exitoso(request):
             detalle_productos=detalle,
             pagado=pago_confirmado,     
             carrito_data=conteo_productos,
-            fecha_retiro=datos_cliente.get('fecha_retiro'), # Capturamos la fecha
-            hora_retiro=datos_cliente.get('hora_retiro')
+            fecha_retiro=fecha_ret,
+            hora_retiro=hora_ret
         )
+        nueva_orden.refresh_from_db() 
 
         try:
             dominio = request.build_absolute_uri('/')[:-1]
             contexto = {
                 'orden': nueva_orden,
-                'productos_comprados': productos_db, # Enviamos los objetos Producto
-                'dominio': dominio                   # Enviamos el dominio para los links
+                'productos_comprados': productos_db,
+                'dominio': dominio
             }
+
             html_cliente = render_to_string('emails/cliente.html', contexto)
             text_cliente = strip_tags(html_cliente)
             
@@ -251,6 +273,8 @@ def pago_exitoso(request):
             )
             msg_cliente.attach_alternative(html_cliente, "text/html")
             msg_cliente.send(fail_silently=False)
+
+            # Correo Vendedor
             html_vendedor = render_to_string('emails/vendedor.html', contexto)
             text_vendedor = strip_tags(html_vendedor)
             tipo_entrega = 'RETIRO' if nueva_orden.metodo_entrega == 'retiro' else 'DESPACHO'
@@ -341,14 +365,11 @@ def dejar_resena(request, producto_id):
 # core/views.py
 
 def catalogo(request):
-    # Capturamos lo que viene después de '?categoria='
     categoria_slug = request.GET.get('categoria')
     
     if categoria_slug:
-        # Filtramos los productos que coincidan exactamente con la categoría
         productos = Producto.objects.filter(categoria__iexact=categoria_slug)
     else:
-        # Si no hay filtro, mostramos el catálogo completo
         productos = Producto.objects.all()
 
     return render(request, 'catalogo.html', {
@@ -358,8 +379,6 @@ def catalogo(request):
 
 def rastreo_pedido(request, orden_id):
     orden = get_object_or_404(Orden, id=orden_id)
-    
-    # Asignamos un porcentaje de progreso a cada estado
     pesos = {
         'recibido': 15,
         'preparando': 50,

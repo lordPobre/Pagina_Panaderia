@@ -119,13 +119,10 @@
         const wrapperDireccion = document.getElementById('wrapper_direccion');
         const campoDireccion = document.getElementById('campo_direccion');
         const infoRetiro = document.getElementById('info_retiro');
-        
-        // Nuevos Elementos de Fecha y Hora
         const seccionRetiro = document.getElementById('seccion_retiro');
         const inputFechaRetiro = document.getElementById('id_fecha_retiro');
         const inputHoraRetiro = document.getElementById('id_hora_retiro');
         
-        // Establecer la fecha de hoy por defecto al cargar la página
         inputFechaRetiro.valueAsDate = new Date();
         
         const wrapperPagoPresencial = document.getElementById('wrapper_pago_presencial');
@@ -135,35 +132,24 @@
         radiosEntrega.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value === 'retiro') {
-                    // Ocultar Dirección
                     wrapperDireccion.classList.add('d-none');
                     campoDireccion.required = false;
-                    
-                    // Mostrar Retiro
                     infoRetiro.classList.remove('d-none');
                     seccionRetiro.style.display = 'block';
                     inputFechaRetiro.required = true;
                     inputHoraRetiro.required = true;
-                    
-                    // Mostrar Pago Presencial
                     wrapperPagoPresencial.classList.remove('d-none');
                 } else {
-                    // Mostrar Dirección
+
                     wrapperDireccion.classList.remove('d-none');
                     campoDireccion.required = true;
-                    
-                    // Ocultar Retiro
                     infoRetiro.classList.add('d-none');
                     seccionRetiro.style.display = 'none';
                     inputFechaRetiro.required = false;
                     inputHoraRetiro.required = false;
                     inputHoraRetiro.value = "";
-                    
-                    // Ocultar Pago Presencial y forzar MercadoPago
                     wrapperPagoPresencial.classList.add('d-none');
                     radioPagoOnline.checked = true;
-                    
-                    // Restaurar botón
                     btnSubmit.innerText = "Continuar al Pago";
                     btnSubmit.classList.replace('btn-success', 'btn-brand'); 
                 }

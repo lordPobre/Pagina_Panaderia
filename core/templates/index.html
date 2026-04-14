@@ -1,87 +1,287 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block content %}
-<header class="position-relative text-center text-white d-flex align-items-center justify-content-center" 
-        style="background-image: url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=2072&auto=format&fit=crop'); background-size: cover; background-position: center; min-height: 80vh;">
+<style>
+    .bento-card {
+        border-radius: 24px;
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
+        border: none;
+        background: #fff;
+    }
     
-    <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(0, 0, 0, 0.55); z-index: 1;"></div>
+    .bento-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(211, 84, 0, 0.15) !important;
+    }
+
+    .carousel-item-bg {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-size: cover;
+        background-position: center;
+        transition: transform 0.6s ease;
+        z-index: 1;
+    }
+
+    .bento-card:hover .carousel-item-bg,
+    .bento-card:hover .bento-img-bg {
+        transform: scale(1.05);
+    }
+
+    .bento-img-bg {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-size: cover;
+        background-position: center;
+        transition: transform 0.6s ease;
+        z-index: 1;
+    }
+
+    .bento-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(to top, rgba(44, 62, 80, 0.9) 0%, rgba(44, 62, 80, 0.2) 50%, rgba(0,0,0,0) 100%);
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .bento-content {
+        position: relative;
+        z-index: 3;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    .badge-blur {
+        backdrop-filter: blur(8px);
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
     
-    <div class="container position-relative" style="z-index: 2;">
-        <span class="badge bg-warning text-dark mb-3 px-4 py-2 shadow-sm pulse-animation" style="font-family: 'Poppins', sans-serif; letter-spacing: 2px; font-weight: 600; border-radius: 20px;">
-            PANADERÍA LA JOVITA
-        </span>
-        <h1 class="display-2 fw-bold mb-3" style="font-family: 'Poppins', sans-serif; text-shadow: 2px 2px 8px rgba(0,0,0,0.6);">
-            El Sabor de la Tradición
-        </h1>
-        <p class="lead mb-5 mx-auto" style="max-width: 700px; font-weight: 300; font-size: 1.25rem; text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">
-            Pan crujiente, masas frescas y pastelería hecha con amor todos los días. Pide online y retira sin filas o recíbelo en la puerta de tu casa.
-        </p>
-        
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-            <a href="{% url 'catalogo' %}" class="btn btn-warning btn-lg fw-bold shadow" style="border-radius: 30px; padding: 12px 35px; font-family: 'Poppins', sans-serif;">
-                Ver Catálogo Completo <i class="bi bi-arrow-right-circle ms-2"></i>
-            </a>
+    .carousel-control-prev, .carousel-control-next {
+        z-index: 4;
+        width: 10%;
+    }
+
+    .scrolling-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 1.5rem;
+        padding-bottom: 1rem;
+        padding-top: 0.5rem;
+    }
+    .scrolling-wrapper::-webkit-scrollbar {
+        height: 6px;
+    }
+    .scrolling-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .scrolling-wrapper::-webkit-scrollbar-thumb {
+        background: #d35400; 
+        border-radius: 10px;
+    }
+    .scrolling-card {
+        flex: 0 0 auto;
+        width: 260px; 
+        transition: transform 0.3s ease;
+    }
+    .scrolling-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    
+    <div class="row mb-4 align-items-end">
+        <div class="col-md-8">
+            <h1 class="fw-bold display-5 mb-2" style="color: #2c3e50; letter-spacing: -1px;">
+                Recién salido del horno. <br>
+                <span class="text-brand" style="color: #d35400;">Directo a tu mesa.</span>
+            </h1>
+            <p class="text-muted fs-5 mb-0">Descubre nuestra tradición en panadería y las mejores ofertas del día.</p>
         </div>
     </div>
-</header>
 
-{% if ofertas %}
-<div class="container mt-5 mb-5">
-    <div class="d-flex align-items-center mb-4">
-        <h2 class="fw-bold mb-0" style="color: #d35400; font-family: 'Poppins', sans-serif;">
-            <i class="bi bi-star-fill text-warning me-2"></i>Ofertas del Día
-        </h2>
-        <span class="badge bg-danger ms-3 pulse-animation">¡Por tiempo limitado!</span>
-    </div>
-    
-    <div class="row">
-        {% for p in ofertas %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 tarjeta-producto shadow-sm border-warning" style="border-width: 2px; border-radius: 16px;">
-                <div class="position-absolute top-0 end-0 bg-warning text-dark px-3 py-1 rounded-bl fw-bold shadow-sm" style="border-bottom-left-radius: 10px; font-family: 'Poppins', sans-serif; z-index: 1;">
-                    OFERTA
-                </div>
+    <div class="row g-4">
+        
+        <div class="col-lg-8">
+            {% if oferta_principal %}
+            <div class="card bento-card shadow-sm h-100" style="min-height: 400px;">
                 
-                <a href="{% url 'producto_detalle' p.id %}" class="text-decoration-none">
-                    {% if p.imagen %}
-                        <img src="{{ p.imagen.url }}" class="card-img-top" style="height: 250px; object-fit: cover; border-top-left-radius: 14px; border-top-right-radius: 14px;">
-                    {% else %}
-                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px; border-top-left-radius: 14px; border-top-right-radius: 14px;">
-                            <i class="bi bi-camera text-muted" style="font-size: 3rem;"></i>
+                <div id="carouselOferta" class="carousel slide carousel-fade h-100 position-absolute w-100" data-bs-ride="carousel" style="z-index: 1;">
+                    <div class="carousel-inner h-100">
+                        <div class="carousel-item active h-100">
+                            <div class="carousel-item-bg" 
+                                style="background-image: url('{% if oferta_principal.imagen %}{{ oferta_principal.imagen.url }}{% else %}https://images.unsplash.com/photo-1599599810694-b5b37304c041?q=80&w=1000&auto=format&fit=crop{% endif %}');">
+                            </div>
                         </div>
+
+                        {% for foto in oferta_principal.galeria.all %}
+                        <div class="carousel-item h-100">
+                            <div class="carousel-item-bg" style="background-image: url('{{ foto.imagen.url }}');"></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if oferta_principal.galeria.count > 0 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselOferta" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Anterior</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselOferta" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Siguiente</span>
+                    </button>
                     {% endif %}
-                </a>
+                </div>
+                <div class="bento-overlay"></div>
                 
-                <div class="card-body d-flex flex-column text-center bg-light" style="border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;">
-                    <a href="{% url 'producto_detalle' p.id %}" class="text-decoration-none">
-                        <h4 class="tarjeta-titulo fw-bold text-dark mb-1">{{ p.nombre }}</h4>
-                    </a>
-                    <p class="text-muted text-uppercase fw-semibold mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">{{ p.categoria }}</p>
-                    
-                    <div class="d-flex justify-content-center align-items-center my-3">
-                        {% if p.precio_anterior %}
-                            <span class="text-muted text-decoration-line-through me-2 fs-5" style="font-family: 'Poppins', sans-serif;">${{ p.precio_anterior }}</span>
+                <div class="card-body bento-content p-5 text-white" style="pointer-events: none;"> 
+                    <div class="d-flex justify-content-between align-items-start mb-auto" style="pointer-events: auto;">
+                        <span class="badge badge-blur text-white rounded-pill px-3 py-2 fs-6 shadow-sm">
+                            <i class="bi bi-fire text-warning me-1"></i> Oferta del Día
+                        </span>
+                        
+                        {% if oferta_principal.stock and oferta_principal.stock <= 10 %}
+                        <span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm">¡Quedan solo {{ oferta_principal.stock }}!</span>
                         {% endif %}
-                        <h3 class="tarjeta-precio text-danger fw-bold mb-0">${{ p.precio }}</h3>
                     </div>
                     
-                    <div class="mt-auto">
-                        <form action="{% url 'agregar' p.id %}" method="POST">
-                            {% csrf_token %}
-                            <div class="input-group input-group-sm mb-2 justify-content-center">
-                                <span class="input-group-text bg-white border-0 text-muted">Cant.</span>
-                                <input type="number" name="cantidad" class="form-control text-center border-0 fw-bold bg-white" value="1" min="1" max="{{ p.stock }}" style="max-width: 80px;">
-                            </div>
-                            <button type="submit" class="btn btn-warning w-100 fw-bold shadow-sm py-2" style="font-family: 'Poppins', sans-serif; border-radius: 8px;" {% if p.stock == 0 %}disabled{% endif %}>
-                                ¡Llevar Oferta!
-                            </button>
-                        </form>
+                    <div style="pointer-events: auto;">
+                        <h2 class="display-6 fw-bold mb-1" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">{{ oferta_principal.nombre }}</h2>
+                        <p class="fs-5 text-white mb-3" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">Aprovecha nuestro precio especial solo por hoy.</p>
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="{% url 'producto_detalle' oferta_principal.id %}" class="btn btn-brand btn-lg rounded-pill fw-bold px-4 shadow">
+                                Ver Detalle <i class="bi bi-arrow-right ms-2"></i>
+                            </a>
+                            <h3 class="mb-0 text-warning fw-bold" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                                ${{ oferta_principal.precio }} 
+                                {% if oferta_principal.precio_anterior %}
+                                <small class="text-decoration-line-through text-white fs-6">${{ oferta_principal.precio_anterior }}</small>
+                                {% endif %}
+                            </h3>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% else %}
+            <div class="card bento-card shadow-sm h-100" style="min-height: 400px;">
+                <div class="bento-img-bg" style="background-image: url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000&auto=format&fit=crop');"></div>
+                <div class="bento-overlay"></div>
+                <div class="card-body bento-content p-5 text-white">
+                    <div class="d-flex justify-content-between align-items-start mb-auto">
+                        <span class="badge badge-blur text-white rounded-pill px-3 py-2 fs-6">
+                            <i class="bi bi-star-fill text-warning me-1"></i> Calidad Premium
+                        </span>
+                    </div>
+                    <div>
+                        <h2 class="display-6 fw-bold mb-1">El Verdadero Sabor</h2>
+                        <p class="fs-5 text-white-50 mb-3">Ingredientes frescos y recetas que pasan de generación en generación.</p>
+                        <a href="{% url 'catalogo' %}" class="btn btn-brand btn-lg rounded-pill fw-bold px-4">
+                            Ver Todo el Catálogo <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% endfor %}
+
+        <div class="col-lg-4 d-flex flex-column gap-4">
+            
+            <div class="card bento-card shadow-sm flex-grow-1" style="min-height: 190px;">
+                {% if destacado_1 %}
+                <div class="bento-img-bg" style="background-image: url('{% if destacado_1.imagen %}{{ destacado_1.imagen.url }}{% else %}https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=800&auto=format&fit=crop{% endif %}');"></div>
+                <div class="bento-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                <div class="card-body bento-content p-4 text-white">
+                    <h4 class="fw-bold mb-1">{{ destacado_1.nombre }}</h4>
+                    <p class="small text-white-50 mb-2">¡Pruébalo hoy mismo!</p>
+                    <a href="{% url 'producto_detalle' destacado_1.id %}" class="text-warning text-decoration-none fw-bold stretched-link">
+                        Ver más <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="bento-img-bg" style="background-image: url('{% static 'img/torta.png' %}');"></div>
+                <div class="bento-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                <div class="card-body bento-content p-4 text-white">
+                    <h4 class="fw-bold mb-1">Pastelería Fina</h4>
+                    <p class="small text-white-50 mb-2">Tartas y dulces para compartir.</p>
+                    <a href="{% url 'catalogo' %}?categoria=Pastelería" class="text-warning text-decoration-none fw-bold stretched-link">
+                        Ver catálogo <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card bento-card shadow-sm flex-grow-1" style="min-height: 190px;">
+                {% if destacado_2 %}
+                <div class="bento-img-bg" style="background-image: url('{% if destacado_2.imagen %}{{ destacado_2.imagen.url }}{% else %}https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=800&auto=format&fit=crop{% endif %}');"></div>
+                <div class="bento-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                <div class="card-body bento-content p-4 text-white">
+                    <h4 class="fw-bold mb-1">{{ destacado_2.nombre }}</h4>
+                    <p class="small text-white-50 mb-2">Recién horneado.</p>
+                    <a href="{% url 'producto_detalle' destacado_2.id %}" class="text-warning text-decoration-none fw-bold stretched-link">
+                        Ver más <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="bento-img-bg" style="background-image: url('https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=800&auto=format&fit=crop');"></div>
+                <div class="bento-overlay" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+                <div class="card-body bento-content p-4 text-white">
+                    <h4 class="fw-bold mb-1">Pan Fresco</h4>
+                    <p class="small text-white-50 mb-2">Marraquetas y hallullas calientes.</p>
+                    <a href="{% url 'catalogo' %}?categoria=Panadería" class="text-warning text-decoration-none fw-bold stretched-link">
+                        Ver catálogo <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
     </div>
-</div>
-{% endif %}
+
+    {% if todas_las_ofertas.count > 0 %}
+    <div class="row mt-5 pt-3 mb-2">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-tag-fill fs-3 text-warning me-2"></i>
+                <h3 class="fw-bold mb-0" style="color: #2c3e50;">Más imperdibles de hoy</h3>
+            </div>
+            
+            <div class="scrolling-wrapper pb-3">
+                {% for producto in todas_las_ofertas %}
+                <div class="card shadow-sm scrolling-card border-0 rounded-4 h-100">
+                    <img src="{% if producto.imagen %}{{ producto.imagen.url }}{% else %}https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop{% endif %}" 
+                         class="card-img-top rounded-top-4" 
+                         alt="{{ producto.nombre }}" 
+                         style="height: 160px; object-fit: cover;">
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="fw-bold text-truncate mb-1" style="color: #2c3e50;" title="{{ producto.nombre }}">{{ producto.nombre }}</h5>
+                        <p class="small text-muted mb-2">{{ producto.categoria.nombre|default:"Especialidad" }}</p>
+                        
+                        <p class="mb-auto text-warning fw-bold fs-5">
+                            ${{ producto.precio }}
+                            {% if producto.precio_anterior %}
+                            <small class="text-muted text-decoration-line-through fw-normal fs-6 ms-1">${{ producto.precio_anterior }}</small>
+                            {% endif %}
+                        </p>
+                        
+                        <a href="{% url 'producto_detalle' producto.id %}" class="btn btn-sm btn-outline-dark w-100 mt-3 rounded-pill fw-bold stretched-link">
+                            Ver Producto
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    </div>
 {% endblock %}

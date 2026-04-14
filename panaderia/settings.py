@@ -92,12 +92,16 @@ JAZZMIN_SETTINGS = {
 
     # Ocultar aplicaciones que el dueño no necesita ver (como menús internos de Django)
     "hide_apps": [], 
-    "hide_models": [],
+    "hide_models": ["core.Orden"],
 
     # --- BOTONES RÁPIDOS EN LA BARRA SUPERIOR ---
     "topmenu_links": [
         {"name": "Ver Tienda", "url": "/", "new_window": True}, # Para ir a la página web real
         {"model": "core.Orden"}, # Acceso directo a las ventas
+    ],
+    "topmenu_links": [
+    {"name": "Pendientes", "url": "admin:core_ordenactiva_changelist"},
+    {"name": "Historial", "url": "admin:core_ordenhistorial_changelist"},
     ],
 }
 JAZZMIN_UI_TWEAKS = {
